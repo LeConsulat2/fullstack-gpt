@@ -1,3 +1,4 @@
 {
-  "notebook.output.wordWrap": true
+  "notebook.output.wordWrap": true,
+  "editor.wordWrap": "wordWrapColumn"
 }

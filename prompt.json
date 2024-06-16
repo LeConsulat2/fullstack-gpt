@@ -1,5 +1,5 @@
 {
   "_type": "prompt",
   "template": "What is the RPL process of {university}",
-  "input_variables": ["country"]
+  "input_variables": ["university"]
 }
