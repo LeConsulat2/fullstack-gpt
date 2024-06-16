@@ -1,4 +1,6 @@
 {
   "notebook.output.wordWrap": true,
-  "editor.wordWrap": "wordWrapColumn"
+  "editor.wordWrap": "wordWrapColumn",
+  "editor.formatOnSave": true,
+  "materialTheme.accent": "Blue"
 }

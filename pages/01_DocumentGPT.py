@@ -1,31 +1,20 @@
 import streamlit as st
-import time
 
-st.set_page_config(page_title="DocumentGPT", page_icon="📖")
+st.title("DocumentGPT")
 
-st.title("Document GPT")
+# File uploader
+uploaded_file = st.file_uploader("Choose a file")
 
+if uploaded_file is not None:
+    # To read file as bytes:
+    file_content = uploaded_file.read()
 
-if "messages" not in st.session_state:
-    st.session_state["messages"] = []
+    # If you want to display the file content
+    st.write(file_content.decode("utf-8"))
 
+    # Optionally, if the file is a text file and you want to process it further
+    # Convert bytes to string and process it
+    text_content = file_content.decode("utf-8")
 
-def send_message(message, role, save=True):
-    with st.chat_message(role):
-        st.write(message)
-    if save:
-        st.session_state["messages"].append({"message": message, "role": role})
-
-
-for message in st.session_state["messages"]:
-    send_message(message["message"], message["role"], save=False)
-
-message = st.chat_input("Send a meesage to AUTGPT")
-
-if message:
-    send_message(message, "human")
-    time.sleep(2)
-    send_message(f"You said: {message}", "ai")
-
-    with st.sidebar:
-        st.write(st.session_state)
+    # Display the content
+    st.text_area("File Content", text_content, height=300)
