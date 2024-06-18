@@ -18,7 +18,7 @@ Here are the apps you can access:
 - []    [PrivateGPT](/PrivateGPT)  
 - []    [QuizGPT](/QuizGPT)  
 - []    [SiteGPT](/SiteGPT)  
-- []   [MeetingGPT](/MeetingGPT)  
+- []    [MeetingGPT](/MeetingGPT)  
 - []    [InvestorGPT](/InvestorGPT)  
 """
 )

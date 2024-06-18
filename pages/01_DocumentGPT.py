@@ -1,20 +1,57 @@
+import time
+from langchain.document_loaders import UnstructuredFileLoader
+from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
+from langchain.storage import LocalFileStore
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.prompts import ChatPromptTemplate
+from langchain.vectorstores.faiss import FAISS
 import streamlit as st
+
+st.set_page_config(
+    page_title="DocumentGPT",
+    page_icon="📃",
+)
+
+
+def embed_file(file):
+    file_content = file.read()
+    file_path = f"./.cache/files/{file.name}"
+    with open(file_path, "wb") as f:
+        f.write(file_content)
+    cache_dir = LocalFileStore(f"./.cache/embeddings/{file.name}")
+    splitter = CharacterTextSplitter.from_tiktoken_encoder(
+        separator="\n",
+        chunk_size=300,
+        chunk_overlap=30,
+    )
+    loader = UnstructuredFileLoader("./files/BAU_Report_May.txt")
+    docs = loader.load_and_split(text_splitter=splitter)
+    embeddings = OpenAIEmbeddings()
+    cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
+    vectorstore = FAISS.from_documents(docs, cached_embeddings)
+    retriever = vectorstore.as_retriever()
+    return retriever
+
 
 st.title("DocumentGPT")
 
+st.markdown(
+    """
+Welcome!
+            
+Use this chatbot to ask questions to an AI about your files!
+            
+"""
+)
+
+
 # File uploader
-uploaded_file = st.file_uploader("Choose a file")
+file = st.file_uploader(
+    "Upload a .txt .pdf or .docx file",
+    type=["pdf", "txt", "docx"],
+)
 
-if uploaded_file is not None:
-    # To read file as bytes:
-    file_content = uploaded_file.read()
-
-    # If you want to display the file content
-    st.write(file_content.decode("utf-8"))
-
-    # Optionally, if the file is a text file and you want to process it further
-    # Convert bytes to string and process it
-    text_content = file_content.decode("utf-8")
-
-    # Display the content
-    st.text_area("File Content", text_content, height=300)
+if file:
+    retriever = embed_file(file)
+    s = retriever.invoke("summary")
+    s
