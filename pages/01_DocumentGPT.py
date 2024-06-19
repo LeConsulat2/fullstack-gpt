@@ -1,11 +1,15 @@
+from typing import Any, Dict, List
+from uuid import UUID
 from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import UnstructuredFileLoader
 from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
+from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain.storage import LocalFileStore
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores.faiss import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain_community.chat_models import ChatOpenAI
+from langchain.callbacks.base import BaseCallbackHandler
 import streamlit as st
 
 st.set_page_config(
@@ -13,8 +17,29 @@ st.set_page_config(
     page_icon="📃",
 )
 
+
+class ChatCallBackHandler(BaseCallbackHandler):
+    def on_llm_start(self, *args, **kwargs):
+        self.message = ""  # Reset message on LLM start
+        self.message_box = st.empty()  # Create an empty placeholder for the message
+
+    def on_llm_end(self, *args, **kwargs):
+        save_message(self.message, "ai")
+        # send_message(self.message, "ai")  # Send the accumulated message when LLM ends
+
+    def on_llm_new_token(self, token, *args, **kwargs):
+        self.message += token  # Accumulate tokens
+        self.message_box.markdown(
+            self.message
+        )  # Update the message box with the accumulated message
+
+
 llm = ChatOpenAI(
     temperature=0.1,
+    streaming=True,
+    callbacks=[
+        ChatCallBackHandler(),  # Use the custom callback handler
+    ],
 )
 
 
@@ -41,20 +66,27 @@ def embed_file(file):
     return retriever
 
 
+def save_message(message, role):
+    if "messages" not in st.session_state:  # Ensure session state has a messages list
+        st.session_state["messages"] = []
+    st.session_state["messages"].append({"message": message, "role": role})
+
+
 def send_message(message, role, save=True):
     with st.chat_message(role):
         st.markdown(message)
     if save:
-        st.session_state["messages"].append({"message": message, "role": role})
+        save_message(message, role)
 
 
 def paint_history():
-    for message in st.session_state["messages"]:
-        send_message(
-            message["message"],
-            message["role"],
-            save=False,
-        )
+    if "messages" in st.session_state:  # Check if there are messages in session state
+        for message in st.session_state["messages"]:
+            send_message(
+                message["message"],
+                message["role"],
+                save=False,
+            )
 
 
 def format_docs(docs):
@@ -66,11 +98,10 @@ prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             """
-    Answer the question using ONLY the following context. If you don't know the answer just say you don't know. Don't make anything up.
+            Answer the question using ONLY the following context. If you don't know the answer just say you don't know. Don't make anything up.
 
-    Context: {context}
-
-    """,
+            Context: {context}
+            """,
         ),
         ("human", "{question}"),
     ]
@@ -80,12 +111,12 @@ st.title("DocumentGPT")
 
 st.markdown(
     """
-Welcome!
-            
-Use this chatbot to ask questions to an AI about your files!
+    Welcome!
+                
+    Use this chatbot to ask questions to an AI about your files!
 
-Upload your files on the sidebar.
-"""
+    Upload your files on the sidebar.
+    """
 )
 
 with st.sidebar:
@@ -107,8 +138,10 @@ if file:
             "context": formatted_docs,
             "question": message,
         }
+
         chain = prompt | llm
-        response = chain.invoke(chain_input)
-        send_message(response.content, "ai")
+        with st.chat_message("ai"):
+            response = chain.invoke(chain_input)
+        # No need to call send_message here as it will be handled by the callback
 else:
-    st.session_state["messages"] = []
+    st.session_state["messages"] = []  # Initialize messages list if not present
