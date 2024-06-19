@@ -35,7 +35,7 @@ def embed_file(file):
     embeddings = OpenAIEmbeddings()
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
 
-    # Create a FAISS retriever or other retriever based on your logic
+    # Create a FAISS retriever
     retriever = FAISS.from_documents(docs, cached_embeddings)
 
     return retriever
@@ -66,7 +66,7 @@ prompt = ChatPromptTemplate.from_messages(
         (
             "system",
             """
-    Answer the question using ONLY the following context. If you dont know the answer just say you dont know. Dont make anything up.
+    Answer the question using ONLY the following context. If you don't know the answer just say you don't know. Don't make anything up.
 
     Context: {context}
 
@@ -75,7 +75,6 @@ prompt = ChatPromptTemplate.from_messages(
         ("human", "{question}"),
     ]
 )
-
 
 st.title("DocumentGPT")
 
@@ -102,17 +101,14 @@ if file:
     message = st.chat_input("Ask anything about your file...")
     if message:
         send_message(message, "human")
-        chain = (
-            {
-                "context": retriever | RunnableLambda(format_docs),
-                "question": RunnablePassthrough(),
-            }
-            | prompt
-            | llm
-        )
-        response = chain.invoke(message)
+        docs = retriever.similarity_search(message)
+        formatted_docs = format_docs(docs)
+        chain_input = {
+            "context": formatted_docs,
+            "question": message,
+        }
+        chain = prompt | llm
+        response = chain.invoke(chain_input)
         send_message(response.content, "ai")
-
-
 else:
     st.session_state["messages"] = []
