@@ -25,7 +25,6 @@ class ChatCallBackHandler(BaseCallbackHandler):
 
     def on_llm_end(self, *args, **kwargs):
         save_message(self.message, "ai")
-        # send_message(self.message, "ai")  # Send the accumulated message when LLM ends
 
     def on_llm_new_token(self, token, *args, **kwargs):
         self.message += token  # Accumulate tokens
@@ -41,6 +40,21 @@ llm = ChatOpenAI(
         ChatCallBackHandler(),  # Use the custom callback handler
     ],
 )
+
+
+class SimpleMemory:
+    def __init__(self):
+        self.context = ""
+
+    def update_memory(self, new_context):
+        self.context += new_context
+
+    def get_context(self):
+        return self.context
+
+
+if "memory" not in st.session_state:
+    st.session_state.memory = SimpleMemory()
 
 
 @st.cache_resource(show_spinner="Embedding file...")
@@ -134,8 +148,12 @@ if file:
         send_message(message, "human")
         docs = retriever.similarity_search(message)
         formatted_docs = format_docs(docs)
+
+        # Update memory with the retrieved context
+        st.session_state.memory.update_memory(formatted_docs)
+
         chain_input = {
-            "context": formatted_docs,
+            "context": st.session_state.memory.get_context(),
             "question": message,
         }
 
