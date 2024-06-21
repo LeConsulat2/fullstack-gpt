@@ -1,9 +1,11 @@
+from langchain.document_loaders import UnstructuredFileLoader
+from langchain.text_splitter import CharacterTextSplitter
+from langchain_community.chat_models import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.callbacks import StreamingStdOutCallbackHandler
 import streamlit as st
 from langchain.retrievers import WikipediaRetriever
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.document_loaders import UnstructuredFileLoader
-from langchain_community.chat_models import ChatOpenAI
-import os
+
 
 st.set_page_config(
     page_title="QuizGPT",
@@ -12,18 +14,20 @@ st.set_page_config(
 
 st.title("QuizGPT")
 
-llm = ChatOpenAI(temperature=0.1, model="gpt-3.5-turbo-0125")
+llm = ChatOpenAI(
+    temperature=0.1,
+    model="gpt-3.5-turbo",
+    streaming=True,
+    callbacks=[StreamingStdOutCallbackHandler()],
+)
 
 
 @st.cache_resource(show_spinner="Loading file...")
 def split_file(file):
     file_content = file.read()
-    cache_dir = "./.cache/quiz_files"
-    os.makedirs(cache_dir, exist_ok=True)
-    file_path = os.path.join(cache_dir, file.name)
+    file_path = f"./.cache/quiz_files/{file.name}"
     with open(file_path, "wb") as f:
         f.write(file_content)
-
     splitter = CharacterTextSplitter.from_tiktoken_encoder(
         separator="\n",
         chunk_size=600,
@@ -34,9 +38,12 @@ def split_file(file):
     return docs
 
 
-docs = None
+def format_docs(docs):
+    return "\n\n".join(document.page_content for document in docs)
+
 
 with st.sidebar:
+    docs = None
     choice = st.selectbox(
         "Choose what you want to use.",
         (
@@ -51,31 +58,63 @@ with st.sidebar:
         )
         if file:
             docs = split_file(file)
-            st.write("## Document Contents")
-            for doc in docs:
-                st.write(doc.page_content)
-
     else:
-        topic = st.text_input("Name of the article")
+        topic = st.text_input("Search Wikipedia...")
         if topic:
             retriever = WikipediaRetriever(top_k_results=5)
             with st.spinner("Searching Wikipedia..."):
-                documents = retriever.get_relevant_documents(topic)
-                st.write("## Relevant Wikipedia Articles")
-                for doc in documents:
-                    st.write(doc.page_content)
+                docs = retriever.get_relevant_documents(topic)
 
 if not docs:
     st.markdown(
         """
     Welcome to QuizGPT.
-
-    I will make a quiz from the AUT website, Calendar, knowledge base articles or files you upload to test your knowledge and help you learn.
-
-    Get started by uploading a file or searching on Wikipedia in the sidebar!
-
-
+                
+    I will make a quiz from Wikipedia articles or files you upload to test your knowledge and help you study.
+                
+    Get started by uploading a file or searching on Wikipedia in the sidebar.
     """
     )
 else:
-    st.write(docs)
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """
+    You are a helpful assistant that is role playing as a teacher.
+         
+    Based ONLY on the following context, make 10 questions to test the user's knowledge about the text.
+    
+    Each question should have 4 answers, three of them must be incorrect and one should be correct.
+         
+    Use (o) to signal the correct answer.
+         
+    Question examples:
+         
+    Question: What are supports provided from student hub?
+    Answers: Financial Assistance(o)|Enrolment processing|Application assessment|Fees refund
+         
+    Question: Where can students find academic support resources?
+    Answers: Library(o)|Cafeteria|Gym|Parking lot
+         
+    Question: Who can assist with career guidance?
+    Answers: Career Advisor(o)|Sports Coach|Security Officer|IT Technician
+         
+    Question: What service helps students with personal issues?
+    Answers: Counseling(o)|Bookstore|Administration Office|Maintenance
+         
+    Your turn!
+         
+    Context: {context}
+""",
+            )
+        ]
+    )
+
+    chain = {"context": format_docs} | prompt | llm
+
+    start = st.button("Generate Quiz")
+
+    if start:
+        chain.invoke(docs)
