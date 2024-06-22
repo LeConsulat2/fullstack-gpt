@@ -1,4 +1,5 @@
 import json
+import os
 from langchain_community.document_loaders import UnstructuredFileLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.chat_models import ChatOpenAI
@@ -6,7 +7,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.callbacks import StreamingStdOutCallbackHandler
 import streamlit as st
 from langchain_community.retrievers import WikipediaRetriever
-from langchain.schema import BaseOutputParser
+from langchain.schema import BaseOutputParser, Document
 
 
 class JsonOutParser(BaseOutputParser):
@@ -73,7 +74,7 @@ questions_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-questions_chain = {"context": format_docs} | questions_prompt | llm
+questions_chain = questions_prompt | llm
 
 formatting_prompt = ChatPromptTemplate.from_messages(
     [
@@ -203,10 +204,13 @@ formatting_chain = formatting_prompt | llm
 @st.cache_data(show_spinner="Loading file...")
 def split_file(file):
     file_content = file.read()
-    file_path = f"./.cache/quiz_files/{file.name}"
+    file_dir = "./.cache/quiz_files/"
+    os.makedirs(file_dir, exist_ok=True)
+    file_path = os.path.join(file_dir, file.name)
     with open(file_path, "wb") as f:
         f.write(file_content)
-    splitter = CharacterTextSplitter.from_tiktoken_encoder(
+    # Removed .from_from_huggingface_encoder
+    splitter = CharacterTextSplitter(
         separator="\n",
         chunk_size=600,
         chunk_overlap=100,
@@ -216,8 +220,23 @@ def split_file(file):
     return docs
 
 
+@st.cache_data(show_spinner="Making quiz...")
+def run_quiz_chain(_docs, topic):  # Changed 'docs' to '_docs' to avoid hashing error
+    context = format_docs(_docs)  # Updated variable name from docs to _docs
+    chain = questions_chain | formatting_chain | output_parser
+    return chain.invoke({"context": context})
+
+
+@st.cache_data(show_spinner="Searching Wikipedia...")
+def wiki_search(term):
+    retriever = WikipediaRetriever(top_k_results=5)
+    docs = retriever.get_relevant_documents(term)
+    return docs
+
+
 with st.sidebar:
     docs = None
+    topic = None
     choice = st.selectbox(
         "Choose what you want to use.",
         (
@@ -235,9 +254,9 @@ with st.sidebar:
     else:
         topic = st.text_input("Search Wikipedia...")
         if topic:
-            retriever = WikipediaRetriever(top_k_results=5)
-            with st.status("Searching Wikipedia..."):
-                docs = retriever.get_relevant_documents(topic)
+            docs = wiki_search(topic)
+
+
 if not docs:
     st.markdown(
         """
@@ -249,9 +268,17 @@ if not docs:
     """
     )
 else:
-    start = st.button("Generate Quiz")
-
-    if start:
-        chain = {"context": questions_chain} | formatting_chain | output_parser
-        response = chain.invoke(docs)
-        st.write(response)
+    response = run_quiz_chain(docs, topic if topic else file.name)
+    with st.form("questions_form"):
+        for question in response["questions"]:
+            st.write(question["question"])
+            value = st.radio(
+                "Select an option.",
+                [answer["answer"] for answer in question["answers"]],
+                index=None,
+            )
+            if {"answer": value, "correct": True} in question["answers"]:
+                st.success("Correct!")
+            elif value is not None:
+                st.error("Wrong!")
+        button = st.form_submit_button()
