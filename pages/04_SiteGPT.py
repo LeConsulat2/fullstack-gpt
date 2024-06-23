@@ -2,7 +2,9 @@ import streamlit as st
 import asyncio
 import nest_asyncio
 from langchain.document_loaders import SitemapLoader
+from langchain.vectorstores.faiss import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
 from bs4 import BeautifulSoup
 import html2text
 
@@ -21,7 +23,7 @@ def parse_page(soup: BeautifulSoup):
 
 
 @st.cache_data(show_spinner="Loading website...")
-def load_website(url, limit=500):
+def load_website(url, limit=100):
     splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
         chunk_size=1000,
         chunk_overlap=200,
@@ -37,7 +39,8 @@ def load_website(url, limit=500):
     docs = loader.load_and_split(text_splitter=splitter)[
         :limit
     ]  # Limit the number of documents
-    return docs
+    vector_store = FAISS.from_documents(docs, OpenAIEmbeddings())
+    return vector_store.as_retriever()
 
 
 # Apply nest_asyncio to allow asyncio.run() within an existing event loop
@@ -76,7 +79,7 @@ if url:
         with st.sidebar:
             st.error("Please write down a Sitemap URL")
     else:
-        documents = load_website(url, limit=500)  # Limit to 500 URLs
+        documents = load_website(url, limit=100)  # Limit to 100 URLs
         if documents:
             html2text_transformer = html2text.HTML2Text()
             transformed_documents = [
