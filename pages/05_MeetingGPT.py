@@ -172,7 +172,7 @@ if video:
 
             refine_chain = refine_prompt | llm | StrOutputParser()
 
-            for doc in docs[1:]:
+            for doc in enumerate(docs[1:]):
                 summary = refine_chain.invoke(
                     {
                         "existing_summary": summary,
