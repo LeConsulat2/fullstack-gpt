@@ -69,10 +69,10 @@ def transcribe_chunks(chunk_folder, destination):
         file.write(final_transcription)
 
 
-# 경로 설정
-audio_path = "./openai-devday.mp3"
-chunks_folder = "./.cache/chunks"
-chunk_size = 10  # 청크 크기 (분 단위)
+# # 경로 설정
+# audio_path = "./openai-devday.mp3"
+# chunks_folder = "./.cache/chunks"
+# chunk_size = 10  # 청크 크기 (분 단위)
 
 
 st.set_page_config(
