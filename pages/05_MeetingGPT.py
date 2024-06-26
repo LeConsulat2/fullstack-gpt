@@ -162,7 +162,7 @@ if video:
                 We have the opportunity to refind the existing summary
                 (only if needed) with some more context below.
                 -----------------------------------------------
-                {text}
+                {context}
                 -----------------------------------------------
                 Given the new context, refind he original summary. 
                 If the context isn't useful, RETURN the original summary.
