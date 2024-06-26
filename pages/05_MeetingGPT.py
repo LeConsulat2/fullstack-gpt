@@ -159,12 +159,12 @@ if video:
                 Your job is to produce a final summary.
                 We have provided an existing summary up to a certain point: 
                 {existing_summary}
-                We have the opportunity to refind the existing summary
+                We have the opportunity to refine the existing summary
                 (only if needed) with some more context below.
                 -----------------------------------------------
                 {context}
                 -----------------------------------------------
-                Given the new context, refind he original summary. 
+                Given the new context, refine he original summary. 
                 If the context isn't useful, RETURN the original summary.
 
                 """
