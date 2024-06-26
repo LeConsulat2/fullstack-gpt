@@ -172,11 +172,13 @@ if video:
 
             refine_chain = refine_prompt | llm | StrOutputParser()
 
-            for doc in enumerate(docs[1:]):
-                summary = refine_chain.invoke(
-                    {
-                        "existing_summary": summary,
-                        "context": doc.page_content,
-                    }
-                )
+            with st.status("Summarising...") as status:
+                for i, doc in enumerate(docs[1:]):
+                    status.update(label=f"Processing document {i}/{len(docs)}")
+                    summary = refine_chain.invoke(
+                        {
+                            "existing_summary": summary,
+                            "context": doc.page_content,
+                        }
+                    )
             st.write(summary)
