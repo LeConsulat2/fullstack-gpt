@@ -1,5 +1,6 @@
 import streamlit as st
 from Login import login_page
+from Dark import set_page_config
 
 # Set the page configuration
 st.set_page_config(page_title="AUT GPT Home", page_icon="💬")
