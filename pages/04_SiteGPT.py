@@ -7,6 +7,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from bs4 import BeautifulSoup
 import html2text
+from Dark import set_page_config
 
 
 def parse_page(soup: BeautifulSoup):

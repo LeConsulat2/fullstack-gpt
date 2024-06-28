@@ -8,6 +8,7 @@ from langchain.callbacks import StreamingStdOutCallbackHandler
 import streamlit as st
 from langchain_community.retrievers import WikipediaRetriever
 from langchain.schema import BaseOutputParser, Document
+from Dark import set_page_config
 
 
 class JsonOutParser(BaseOutputParser):

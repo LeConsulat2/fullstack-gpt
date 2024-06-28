@@ -11,6 +11,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.chat_models import ChatOllama
 from langchain.callbacks.base import BaseCallbackHandler
 import streamlit as st
+from Dark import set_page_config
 
 st.set_page_config(
     page_title="PrivateGPT",

@@ -10,7 +10,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
-
+from Dark import set_page_config
 
 llm = ChatOpenAI(
     temperature=0.1,
