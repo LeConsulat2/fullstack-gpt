@@ -11,11 +11,32 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.chat_models import ChatOpenAI
 from langchain.callbacks.base import BaseCallbackHandler
 import streamlit as st
+from Login import login
 
 st.set_page_config(
     page_title="DocumentGPT",
     page_icon="📃",
 )
+
+page = login
+
+
+def main():
+    # Read query parameters
+    query_params = st.query_params
+
+    # Check if the user is authenticated
+    if "authenticated" not in st.session_state or not st.session_state.authenticated:
+        st.warning("Please log in to access this application")
+        st.query_params[login]
+        st.rerun()
+
+    st.title("DocumentGPT")
+    # The rest of your page content here
+
+
+if __name__ == "__main__":
+    main()
 
 
 class ChatCallBackHandler(BaseCallbackHandler):
