@@ -18,8 +18,7 @@ check_authentication()
 
 load_dotenv()
 
-import streamlit as st
-
+st.write(st.secrets)
 # Access secrets via st.secrets
 try:
     openai_api_key = st.secrets["openai"]["api_key"]
