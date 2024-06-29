@@ -8,6 +8,7 @@ from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain.storage import LocalFileStore
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings  # Updated import path
 from langchain.callbacks.base import BaseCallbackHandler
 import streamlit as st
 from Dark import set_page_config
@@ -57,18 +58,6 @@ if "memory" not in st.session_state:
     st.session_state.memory = SimpleMemory()
 
 
-class OpenAIEmbeddings:
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return [self.embed_text(text) for text in texts]
-
-    def embed_text(self, text: str) -> List[float]:
-        response = openai.Embedding.create(input=text, model="text-embedding-ada-002")
-        return response["data"][0]["embedding"]
-
-    def embed_query(self, text: str) -> List[float]:
-        return self.embed_text(text)
-
-
 @st.cache_resource(show_spinner="Embedding file...")
 def embed_file(file):
     file_content = file.read()
@@ -84,7 +73,7 @@ def embed_file(file):
     loader = UnstructuredFileLoader(file_path)
     docs = loader.load_and_split(text_splitter=splitter)
 
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(api_key=openai.api_key)
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
 
     # Create a FAISS retriever
@@ -163,16 +152,22 @@ if file:
             "question": message,
         }
 
-        formatted_prompt = prompt_template.format(**chain_input)
+        formatted_prompt = prompt_template.format(
+            context=chain_input["context"], question=chain_input["question"]
+        )
 
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-0125",  # Use the correct model name
-            messages=[{"role": "system", "content": formatted_prompt}],
-            n=1,
-            stop=None,
-            temperature=0.1,
+            model="gpt-3.5-turbo",  # Specify the model to use
+            messages=[
+                {"role": "user", "content": formatted_prompt}
+            ],  # Use the formatted prompt as the content
+            n=1,  # Number of completions to generate
+            stop=None,  # Stop condition, if any
+            temperature=0.1,  # Sampling temperature
         )
-        ai_message = response.choices[0].message["content"].strip()
+        ai_message = (
+            response.choices[0].message["content"].strip()
+        )  # Correct way to access the message content
         send_message(ai_message, "ai")
 else:
     st.session_state["messages"] = []  # Initialize messages list if not present

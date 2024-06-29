@@ -6,10 +6,11 @@ import glob
 import openai
 from pydub import AudioSegment
 from langchain_community.chat_models import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.schema import StrOutputParser
+from langchain_core.output_parsers import StrOutputParser
+from langchain_openai import OpenAIEmbeddings  # Updated import
 from Dark import set_page_config
 import chardet
 from dotenv import load_dotenv
@@ -64,7 +65,7 @@ def transcribe_chunks(chunk_folder, destination):
     final_transcription = ""
     for file in files:
         with open(file, "rb") as audio_file:
-            transcription = openai.audio.transcriptions.create(
+            transcription = openai.Audio.transcribe(
                 model="whisper-1",
                 file=audio_file,
             )
@@ -76,10 +77,10 @@ def transcribe_chunks(chunk_folder, destination):
         file.write(final_transcription)
 
 
-# # 경로 설정
-# audio_path = "./openai-devday.mp3"
-# chunks_folder = "./.cache/chunks"
-# chunk_size = 10  # 청크 크기 (분 단위)
+# 경로 설정
+audio_path = "./openai-devday.mp3"
+chunks_folder = "./.cache/chunks"
+chunk_size = 10  # 청크 크기 (분 단위)
 
 st.set_page_config(
     page_title="Site",
@@ -174,11 +175,11 @@ if video:
                     # Use TextLoader to process manually read content
                     try:
                         text_loader = TextLoader(content)
-                        splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                            chunk_size=800,
-                            chunk_overlap=100,
+                        # Updated to use SemanticChunker
+                        splitter = SemanticChunker(
+                            OpenAIEmbeddings(api_key=openai_api_key)
                         )
-                        docs = text_loader.load_and_split(text_splitter=splitter)
+                        docs = splitter.create_documents([content])
                     except Exception as e:
                         st.error(f"Error during load and split: {e}")
                         st.stop()  # Stop further processing if there's an error
