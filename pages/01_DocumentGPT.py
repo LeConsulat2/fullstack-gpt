@@ -15,6 +15,10 @@ import streamlit as st
 import os
 from Dark import set_page_config
 from dotenv import load_dotenv
+from Utils import check_authentication  # Import the utility function
+
+# Ensure the user is authenticated
+check_authentication()
 
 load_dotenv()
 

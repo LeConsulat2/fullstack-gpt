@@ -14,6 +14,11 @@ from langchain_openai import OpenAIEmbeddings  # Updated import
 from Dark import set_page_config
 import chardet
 from dotenv import load_dotenv
+from Utils import check_authentication  # Import the utility function
+
+# Ensure the user is authenticated
+check_authentication()
+
 
 load_dotenv()
 
@@ -176,7 +181,7 @@ if video:
                     try:
                         text_loader = TextLoader(content)
                         # Updated to use SemanticChunker
-                        splitter = SemanticChunker(
+                        splitter = RecursiveCharacterTextSplitter(
                             OpenAIEmbeddings(api_key=openai_api_key)
                         )
                         docs = splitter.create_documents([content])

@@ -16,6 +16,6 @@ def login_page(navigate_to):
         if username == credentials["username"] and password == credentials["password"]:
             st.session_state.authenticated = True
             st.success("Login successful!")
-            navigate_to("home")
+            navigate_to("home")  # Navigate to home page upon successful login
         else:
             st.error("Invalid username or password")

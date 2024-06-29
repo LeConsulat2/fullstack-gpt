@@ -1,9 +1,10 @@
 import streamlit as st
 from Login import login_page
 from Dark import set_page_config
+from Utils import check_authentication  # Import the utility function
 
 # Set the page configuration
-st.set_page_config(page_title="AUT GPT Home", page_icon="💬")
+set_page_config(page_title="AUT GPT Home", page_icon="💬")
 
 # Initialize session state variables if not present
 if "page" not in st.session_state:
@@ -32,9 +33,9 @@ def home_page():
     st.markdown(
         """
         # Kia Ora!    
-        Welcome to AUTGPT Page!
+        Welcome to AUT GPT Page!
 
-        Here are the apps you can access:
+        👈Here are the apps you can access from the Side bar👈:
         """
     )
 
@@ -42,14 +43,15 @@ def home_page():
     if st.session_state.authenticated:
         st.markdown(
             """
-            - [DocumentGPT](/DocumentGPT)  
-            - [PrivateGPT](/PrivateGPT)  
-            - [QuizGPT](/QuizGPT)  
-            - [SiteGPT](/SiteGPT)  
-            - [MeetingGPT](/MeetingGPT)  
-            - [InvestorGPT](/InvestorGPT)  
+            - DocumentGPT
+            
+            - QuizGPT
+             
+            - MeetingGPT 
+
             """
         )
+        st.info("🔨  PrivateGPT,  InvestorGPT,  SiteGPT still under construction...🔨")
 
     if st.button("Logout"):
         st.session_state.authenticated = False
