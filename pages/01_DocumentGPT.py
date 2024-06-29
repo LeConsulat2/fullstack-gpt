@@ -18,7 +18,14 @@ check_authentication()
 
 load_dotenv()
 
-openai_api_key = st.secrets["OPENAI_API_KEY"]
+# Access secrets in Streamlit Cloud
+try:
+    openai_api_key = st.secrets["credentials"]["OPENAI_API_KEY"]
+    langchain_api_key = st.secrets["credentials"]["LANGCHAIN_API_KEY"]
+    huggingfacehub_api_token = st.secrets["credentials"]["HUGGINGFACEHUB_API_TOKEN"]
+except KeyError as e:
+    st.error(f"{e.args[0]} is not set in the Streamlit secrets.")
+    st.stop()
 
 
 st.set_page_config(
