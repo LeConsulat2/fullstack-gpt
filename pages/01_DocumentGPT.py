@@ -18,14 +18,29 @@ check_authentication()
 
 load_dotenv()
 
-# Access secrets in Streamlit Cloud
+import streamlit as st
+
+# Access secrets via st.secrets
 try:
-    openai_api_key = st.secrets["credentials"]["OPENAI_API_KEY"]
-    langchain_api_key = st.secrets["credentials"]["LANGCHAIN_API_KEY"]
-    huggingfacehub_api_token = st.secrets["credentials"]["HUGGINGFACEHUB_API_TOKEN"]
+    openai_api_key = st.secrets["openai"]["api_key"]
+    langchain_api_key = st.secrets["langchain"]["api_key"]
+    huggingfacehub_api_token = st.secrets["huggingfacehub"]["api_token"]
+    alpha_vantage_api_key = st.secrets["alpha_vantage"]["api_key"]
+    db_credentials = st.secrets["db_credentials"]
 except KeyError as e:
     st.error(f"{e.args[0]} is not set in the Streamlit secrets.")
     st.stop()
+
+# Example usage
+st.write("Secrets loaded successfully.")
+# You can now use these variables (openai_api_key, langchain_api_key, etc.) in your application.
+
+# Example of using db_credentials in a function
+# Verbose version
+# my_db.connect(username=db_credentials["username"], password=db_credentials["password"])
+
+# Far more compact version using unpacking
+# my_db.connect(**db_credentials)
 
 
 st.set_page_config(
