@@ -1,6 +1,7 @@
 import streamlit as st
 import asyncio
 import nest_asyncio
+import os
 from langchain.document_loaders import SitemapLoader
 from langchain.vectorstores.faiss import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
