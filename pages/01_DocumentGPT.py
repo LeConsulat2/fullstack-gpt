@@ -1,3 +1,4 @@
+import streamlit as st
 from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import UnstructuredFileLoader
 from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
@@ -7,9 +8,7 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import BaseCallbackHandler
-import streamlit as st
 import os
-from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 
@@ -19,34 +18,29 @@ st.set_page_config(
     page_icon="📃",
 )
 
-
 # Ensure the user is authenticated
 check_authentication()
 
+# Load environment variables from .env file for local development
 load_dotenv()
 
+# Access secrets in Streamlit Cloud or locally from environment variables
+openai_api_key = os.getenv(
+    "OPENAI_API_KEY", st.secrets.get("credentials", {}).get("OPENAI_API_KEY")
+)
+alpha_vantage_api_key = os.getenv(
+    "ALPHA_VANTAGE_API_KEY",
+    st.secrets.get("credentials", {}).get("ALPHA_VANTAGE_API_KEY"),
+)
+username = os.getenv("username", st.secrets.get("credentials", {}).get("username"))
+password = os.getenv("password", st.secrets.get("credentials", {}).get("password"))
 
-# Access secrets in Streamlit Cloud
-try:
-    openai_api_key = st.secrets["credentials"]["OPENAI_API_KEY"]
-    alpha_vantage_api_key = st.secrets["credentials"]["ALPHA_VANTAGE_API_KEY"]
-    username = st.secrets["credentials"]["username"]
-    password = st.secrets["credentials"]["password"]
-except KeyError as e:
-    st.error(f"{e.args[0]} is not set in the Streamlit secrets.")
+if not openai_api_key or not alpha_vantage_api_key or not username or not password:
+    st.error("Some required environment variables are missing.")
     st.stop()
 
 # Example usage
 st.write("Secrets loaded successfully.")
-
-# You can now use these variables (openai_api_key, langchain_api_key, etc.) in your application.
-
-# Example of using db_credentials in a function
-# Verbose version
-# my_db.connect(username=db_credentials["username"], password=db_credentials["password"])
-
-# Far more compact version using unpacking
-# my_db.connect(**db_credentials)
 
 
 class ChatCallBackHandler(BaseCallbackHandler):
@@ -71,6 +65,7 @@ llm = ChatOpenAI(
     callbacks=[
         ChatCallBackHandler(),  # Use the custom callback handler
     ],
+    openai_api_key=openai_api_key,  # Pass the API key here
 )
 
 
@@ -103,7 +98,9 @@ def embed_file(file):
     )
     loader = UnstructuredFileLoader(file_path)
     docs = loader.load_and_split(text_splitter=splitter)
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(
+        openai_api_key=openai_api_key
+    )  # Pass the API key here
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
 
     # Create a FAISS retriever
