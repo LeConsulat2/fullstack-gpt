@@ -18,7 +18,7 @@ check_authentication()
 
 load_dotenv()
 
-openai_api_key = st.secrets("OPENAI_API_KEY")
+openai_api_key = st.secrets["OPENAI_API_KEY"]
 
 
 st.set_page_config(
