@@ -13,6 +13,13 @@ from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 
+# Set the page configuration
+st.set_page_config(
+    page_title="DocumentGPT",
+    page_icon="📃",
+)
+
+
 # Ensure the user is authenticated
 check_authentication()
 
@@ -40,12 +47,6 @@ st.write("Secrets loaded successfully.")
 
 # Far more compact version using unpacking
 # my_db.connect(**db_credentials)
-
-
-st.set_page_config(
-    page_title="DocumentGPT",
-    page_icon="📃",
-)
 
 
 class ChatCallBackHandler(BaseCallbackHandler):
