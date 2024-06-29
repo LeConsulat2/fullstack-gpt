@@ -9,7 +9,11 @@ from pydantic import BaseModel, Field
 from langchain.agents import initialize_agent, create_react_agent, AgentType
 from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 from Dark import set_page_config
+from dotenv import load_dotenv
 
+load_dotenv()
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
 llm = ChatOpenAI(
     temperature=0.1,

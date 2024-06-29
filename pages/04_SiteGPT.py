@@ -9,6 +9,12 @@ from bs4 import BeautifulSoup
 import html2text
 from Dark import set_page_config
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
 
 def parse_page(soup: BeautifulSoup):
     # Exclude common repetitive elements

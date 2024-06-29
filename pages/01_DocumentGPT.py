@@ -12,6 +12,11 @@ from langchain_community.chat_models import ChatOpenAI
 from langchain.callbacks.base import BaseCallbackHandler
 import streamlit as st
 from Dark import set_page_config
+from dotenv import load_dotenv
+
+load_dotenv()
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
 
 st.set_page_config(

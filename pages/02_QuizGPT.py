@@ -9,6 +9,11 @@ import streamlit as st
 from langchain_community.retrievers import WikipediaRetriever
 from langchain.schema import BaseOutputParser, Document
 from Dark import set_page_config
+from dotenv import load_dotenv
+
+load_dotenv()
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
 
 class JsonOutParser(BaseOutputParser):

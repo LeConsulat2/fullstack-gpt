@@ -12,6 +12,11 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
 from Dark import set_page_config
 import chardet
+from dotenv import load_dotenv
+
+load_dotenv()
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
 llm = ChatOpenAI(
     temperature=0.1,
