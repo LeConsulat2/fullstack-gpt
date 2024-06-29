@@ -3,13 +3,17 @@ import streamlit as st
 import os
 import requests
 from typing import Type
-from langchain_community.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
-from langchain.agents import initialize_agent, create_react_agent, AgentType
-from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
+from langchain.agents import initialize_agent, AgentType
+from langchain.utilities import DuckDuckGoSearchAPIWrapper
 from Dark import set_page_config
 from dotenv import load_dotenv
+from Utils import check_authentication  # Import the utility function
+
+# Ensure the user is authenticated
+check_authentication()
 
 load_dotenv()
 
@@ -23,21 +27,21 @@ llm = ChatOpenAI(
 alpha_vantage_api_key = os.environ.get("ALPHA_VANTAGE_API_KEY")
 
 
-class StockMarketSymbolSearchToolArsSchema(BaseModel):
+class StockMarketSymbolSearchToolArgsSchema(BaseModel):
     query: str = Field(
-        description="The query you will search for. Example query: Stock Market Symbol for Apple Company"
+        description="The query you will search for.Example query: Stock Market Symbol for Apple Company"
     )
 
 
 class StockMarketSymbolSearchTool(BaseTool):
     name = "StockMarketSymbolSearchTool"
     description = """
-    Use this tool to find the stock market symbol for a company. 
-    It takes a query as an argument.    
-
+    Use this tool to find the stock market symbol for a company.
+    It takes a query as an argument.
+    
     """
-    args_schema: Type[StockMarketSymbolSearchToolArsSchema] = (
-        StockMarketSymbolSearchToolArsSchema
+    args_schema: Type[StockMarketSymbolSearchToolArgsSchema] = (
+        StockMarketSymbolSearchToolArgsSchema
     )
 
     def _run(self, query):
@@ -47,7 +51,7 @@ class StockMarketSymbolSearchTool(BaseTool):
 
 class CompanyOverviewArgsSchema(BaseModel):
     symbol: str = Field(
-        description="Stcok symbol of the company. Example: AAPL, TSLA",
+        description="Stock symbol of the company.Example: AAPL,TSLA",
     )
 
 
@@ -55,8 +59,7 @@ class CompanyOverviewTool(BaseTool):
     name = "CompanyOverview"
     description = """
     Use this to get an overview of the financials of the company.
-    You should enter a stock symbol.     
-
+    You should enter a stock symbol.
     """
     args_schema: Type[CompanyOverviewArgsSchema] = CompanyOverviewArgsSchema
 
@@ -64,7 +67,7 @@ class CompanyOverviewTool(BaseTool):
         r = requests.get(
             f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={alpha_vantage_api_key}"
         )
-        return r.json
+        return r.json()
 
 
 class CompanyIncomeStatementTool(BaseTool):

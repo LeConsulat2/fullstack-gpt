@@ -1,15 +1,11 @@
-from typing import Any, Dict, List
-from uuid import UUID
 from langchain.prompts import ChatPromptTemplate
-from langchain_community.document_loaders import UnstructuredFileLoader
-from langchain.embeddings import CacheBackedEmbeddings
-from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
-from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from langchain.document_loaders import UnstructuredFileLoader
+from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
+from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.storage import LocalFileStore
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_openai.chat_models import ChatOpenAI
-from langchain_openai import OpenAIEmbeddings
+from langchain.vectorstores.faiss import FAISS
+from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import BaseCallbackHandler
 import streamlit as st
 import os

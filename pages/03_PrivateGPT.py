@@ -2,19 +2,22 @@ from typing import Any, Dict, List
 from uuid import UUID
 from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import UnstructuredFileLoader
-from langchain.embeddings import CacheBackedEmbeddings
-from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
-from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from langchain.embeddings import CacheBackedEmbeddings, OllamaEmbeddings
+from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.storage import LocalFileStore
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings  # Updated import path
+from langchain.vectorstores.faiss import FAISS
+from langchain.chat_models import ChatOllama
 from langchain.callbacks.base import BaseCallbackHandler
 import streamlit as st
 from Dark import set_page_config
 from dotenv import load_dotenv
 import os
 import openai
+from Utils import check_authentication  # Import the utility function
+
+# Ensure the user is authenticated
+check_authentication()
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,43 +25,31 @@ load_dotenv()
 # Retrieve the OpenAI API key from the environment
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-st.set_page_config(
-    page_title="PrivateGPT",
-    page_icon="📃",
-)
 
+class ChatCallbackHandler(BaseCallbackHandler):
+    def __init__(self):
+        self.message = ""
 
-class ChatCallBackHandler(BaseCallbackHandler):
     def on_llm_start(self, *args, **kwargs):
-        self.message = ""  # Reset message on LLM start
-        self.message_box = st.empty()  # Create an empty placeholder for the message
+        self.message_box = st.empty()
 
     def on_llm_end(self, *args, **kwargs):
         save_message(self.message, "ai")
 
     def on_llm_new_token(self, token, *args, **kwargs):
-        self.message += token  # Accumulate tokens
-        self.message_box.markdown(
-            self.message
-        )  # Update the message box with the accumulated message
+        self.message += token
+        self.message_box.markdown(self.message)
 
 
-class SimpleMemory:
-    def __init__(self):
-        self.context = ""
-
-    def update_memory(self, new_context):
-        self.context += new_context
-
-    def get_context(self):
-        return self.context
+llm = ChatOllama(
+    model="mistral:latest",
+    temperature=0.1,
+    streaming=True,
+    callbacks=[ChatCallbackHandler()],
+)
 
 
-if "memory" not in st.session_state:
-    st.session_state.memory = SimpleMemory()
-
-
-@st.cache_resource(show_spinner="Embedding file...")
+@st.cache_data(show_spinner="Embedding file...")
 def embed_file(file):
     file_content = file.read()
     file_path = f"./.cache/private_files/{file.name}"
@@ -72,19 +63,14 @@ def embed_file(file):
     )
     loader = UnstructuredFileLoader(file_path)
     docs = loader.load_and_split(text_splitter=splitter)
-
-    embeddings = OpenAIEmbeddings(api_key=openai.api_key)
+    embeddings = OllamaEmbeddings(model="mistral:latest")
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
-
-    # Create a FAISS retriever
-    retriever = FAISS.from_documents(docs, cached_embeddings)
-
+    vectorstore = FAISS.from_documents(docs, cached_embeddings)
+    retriever = vectorstore.as_retriever()
     return retriever
 
 
 def save_message(message, role):
-    if "messages" not in st.session_state:  # Ensure session state has a messages list
-        st.session_state["messages"] = []
     st.session_state["messages"].append({"message": message, "role": role})
 
 
@@ -96,41 +82,44 @@ def send_message(message, role, save=True):
 
 
 def paint_history():
-    if "messages" in st.session_state:  # Check if there are messages in session state
-        for message in st.session_state["messages"]:
-            send_message(
-                message["message"],
-                message["role"],
-                save=False,
-            )
+    for message in st.session_state["messages"]:
+        send_message(
+            message["message"],
+            message["role"],
+            save=False,
+        )
 
 
 def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
 
 
-prompt_template = """
-Answer the question using ONLY the following context and not your training data. If you don't know the answer just say you don't know. Don't make anything up.
+prompt = ChatPromptTemplate.from_template(
+    """Answer the question using ONLY the following context and not your training data. If you don't know the answer just say you don't know. DON'T make anything up.
+    
+    Context: {context}
+    Question:{question}
+    """
+)
 
-Context: {context}
-Question: {question}
-"""
+st.set_page_config(
+    page_title="PrivateGPT",
+    page_icon="❓",
+)
 
 st.title("PrivateGPT")
-
 st.markdown(
     """
-    Welcome!
+Welcome!
             
-    Use this chatbot to ask questions to an AI about your files!
-
-    Upload your files on the sidebar.
-    """
+Use this chatbot to ask questions to an AI about your files!
+Upload your files on the sidebar.
+"""
 )
 
 with st.sidebar:
     file = st.file_uploader(
-        "Upload a .txt .pdf or .docx file",
+        "Upload a .txt, .pdf, or .docx file",
         type=["pdf", "txt", "docx"],
     )
 
@@ -141,33 +130,20 @@ if file:
     message = st.chat_input("Ask anything about your file...")
     if message:
         send_message(message, "human")
-        docs = retriever.similarity_search(message)
-        formatted_docs = format_docs(docs)
-
-        # Update memory with the retrieved context
-        st.session_state.memory.update_memory(formatted_docs)
-
-        chain_input = {
-            "context": st.session_state.memory.get_context(),
-            "question": message,
-        }
-
-        formatted_prompt = prompt_template.format(
-            context=chain_input["context"], question=chain_input["question"]
+        chain = (
+            {
+                "context": retriever | RunnableLambda(format_docs),
+                "question": RunnablePassthrough(),
+            }
+            | prompt
+            | llm
         )
-
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Specify the model to use
-            messages=[
-                {"role": "user", "content": formatted_prompt}
-            ],  # Use the formatted prompt as the content
-            n=1,  # Number of completions to generate
-            stop=None,  # Stop condition, if any
-            temperature=0.1,  # Sampling temperature
-        )
-        ai_message = (
-            response.choices[0].message["content"].strip()
-        )  # Correct way to access the message content
-        send_message(ai_message, "ai")
+        with st.chat_message("ai"):
+            chain.invoke(message)
 else:
-    st.session_state["messages"] = []  # Initialize messages list if not present
+    st.session_state["messages"] = []
+    st.markdown(
+        """
+        Upload a file or search on Wikipedia in the sidebar to get started.
+        """
+    )

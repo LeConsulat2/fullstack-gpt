@@ -3,14 +3,21 @@ import asyncio
 import nest_asyncio
 import os
 from langchain.document_loaders import SitemapLoader
-from langchain.vectorstores.faiss import FAISS
+from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores.faiss import FAISS
 from langchain.embeddings import OpenAIEmbeddings
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
 from bs4 import BeautifulSoup
 import html2text
-from Dark import set_page_config
-
 from dotenv import load_dotenv
+from Dark import set_page_config
+from Utils import check_authentication  # Import the utility function
+
+# Ensure the user is authenticated
+check_authentication()
+
 
 load_dotenv()
 

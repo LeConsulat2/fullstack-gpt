@@ -1,18 +1,18 @@
 import streamlit as st
 import subprocess
 import math
-import os
 import glob
 import openai
-from pydub import AudioSegment
-from langchain_community.chat_models import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.document_loaders import TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_core.output_parsers import StrOutputParser
-from langchain_openai import OpenAIEmbeddings  # Updated import
-from Dark import set_page_config
+import os
 import chardet
+from pydub import AudioSegment
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import ChatPromptTemplate
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.document_loaders import TextLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.schema import StrOutputParser
+from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 
@@ -23,6 +23,11 @@ check_authentication()
 load_dotenv()
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
+
+llm = ChatOpenAI(
+    temperature=0.1,
+    model="gpt-3.5-turbo-0125",
+)
 
 llm = ChatOpenAI(
     temperature=0.1,

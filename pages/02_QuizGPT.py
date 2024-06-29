@@ -1,20 +1,19 @@
-import json
 import os
-from langchain_community.document_loaders import UnstructuredFileLoader
+import json
+from langchain.document_loaders import UnstructuredFileLoader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_openai.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.callbacks import StreamingStdOutCallbackHandler
 import streamlit as st
-from langchain_community.retrievers import WikipediaRetriever
-from langchain.schema import BaseOutputParser, Document
+from langchain.retrievers import WikipediaRetriever
+from langchain.schema import BaseOutputParser
 from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 
 # Ensure the user is authenticated
 check_authentication()
-
 
 load_dotenv()
 
