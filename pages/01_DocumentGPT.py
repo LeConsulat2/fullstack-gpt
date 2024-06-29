@@ -19,8 +19,6 @@ st.set_page_config(
     page_icon="📃",
 )
 
-st.title("DocumentGPT")
-
 
 class ChatCallBackHandler(BaseCallbackHandler):
     def on_llm_start(self, *args, **kwargs):
