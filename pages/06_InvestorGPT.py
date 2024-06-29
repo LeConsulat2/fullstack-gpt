@@ -3,7 +3,7 @@ import streamlit as st
 import os
 import requests
 from typing import Type
-from langchain_openai import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 from langchain.agents import initialize_agent, create_react_agent, AgentType

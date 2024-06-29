@@ -154,25 +154,29 @@ if video:
                 if not os.path.exists(transcription_path):
                     st.error("Transcription file does not exist.")
                 else:
-                    loader = TextLoader(transcription_path)
-
-                    # Displaying content before attempting to load
-                    with open(
-                        transcription_path, "r", encoding=encoding, errors="ignore"
-                    ) as file:
-                        content = file.read()
-                        st.write("Content to be summarized:")
-                        st.write(content)
-
-                    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                        chunk_size=800,
-                        chunk_overlap=100,
-                    )
-
+                    # Manually read file content
                     try:
-                        docs = loader.load_and_split(text_splitter=splitter)
+                        with open(
+                            transcription_path, "r", encoding=encoding, errors="ignore"
+                        ) as file:
+                            content = file.read()
+                            st.write("Content to be summarized:")
+                            st.write(content)
+                    except Exception as e:
+                        st.error(f"Error reading content: {e}")
+                        st.stop()
+
+                    # Use TextLoader to process manually read content
+                    try:
+                        text_loader = TextLoader(content)
+                        splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                            chunk_size=800,
+                            chunk_overlap=100,
+                        )
+                        docs = text_loader.load_and_split(text_splitter=splitter)
                     except Exception as e:
                         st.error(f"Error during load and split: {e}")
+                        st.stop()  # Stop further processing if there's an error
 
                     first_summary_prompt = ChatPromptTemplate.from_template(
                         """
