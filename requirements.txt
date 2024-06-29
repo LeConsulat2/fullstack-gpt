@@ -69,7 +69,7 @@ html2text==2020.1.16
 httpcore==0.18.0
 httptools==0.6.0
 httpx==0.25.0
-huggingface-hub==0.23.0
+huggingface-hub==0.16.4
 humanfriendly==10.0
 hyperframe==6.0.1
 idna==3.4
