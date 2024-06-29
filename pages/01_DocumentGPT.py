@@ -18,7 +18,7 @@ check_authentication()
 
 load_dotenv()
 
-st.write(st.secrets)
+
 # Access secrets via st.secrets
 try:
     openai_api_key = st.secrets["openai"]["api_key"]
@@ -32,6 +32,7 @@ except KeyError as e:
 
 # Example usage
 st.write("Secrets loaded successfully.")
+
 # You can now use these variables (openai_api_key, langchain_api_key, etc.) in your application.
 
 # Example of using db_credentials in a function
