@@ -19,13 +19,12 @@ check_authentication()
 load_dotenv()
 
 
-# Access secrets via st.secrets
+# Access secrets in Streamlit Cloud
 try:
-    openai_api_key = st.secrets["openai"]["api_key"]
-    langchain_api_key = st.secrets["langchain"]["api_key"]
-    huggingfacehub_api_token = st.secrets["huggingfacehub"]["api_token"]
-    alpha_vantage_api_key = st.secrets["alpha_vantage"]["api_key"]
-    db_credentials = st.secrets["db_credentials"]
+    openai_api_key = st.secrets["credentials"]["OPENAI_API_KEY"]
+    alpha_vantage_api_key = st.secrets["credentials"]["ALPHA_VANTAGE_API_KEY"]
+    username = st.secrets["credentials"]["username"]
+    password = st.secrets["credentials"]["password"]
 except KeyError as e:
     st.error(f"{e.args[0]} is not set in the Streamlit secrets.")
     st.stop()
