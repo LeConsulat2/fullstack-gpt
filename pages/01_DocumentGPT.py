@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 from uuid import UUID
 from langchain.prompts import ChatPromptTemplate
-from langchain.document_loaders import UnstructuredFileLoader
+from langchain_community.document_loaders import UnstructuredFileLoader
 from langchain.embeddings import CacheBackedEmbeddings
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough

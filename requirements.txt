@@ -89,12 +89,12 @@ jsonschema-specifications==2023.7.1
 jupyter_client==8.3.1
 jupyter_core==5.3.1
 kiwisolver==1.4.5
-langchain==0.2.0
-langchain-core==0.2.2
-langchain-community==0.2.0
+langchain
+langchain-core
+langchain-community
 langchain-huggingface==0.0.1
 langcodes==3.3.0
-langsmith==0.1.31
+langsmith
 layoutparser==0.3.4
 loguru==0.7.2
 lxml==4.9.3
