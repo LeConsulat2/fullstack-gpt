@@ -75,7 +75,7 @@ questions_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-questions_chain = questions_prompt | llm
+questions_chain = {"context": format_docs} | questions_prompt | llm
 
 formatting_prompt = ChatPromptTemplate.from_messages(
     [
@@ -224,8 +224,8 @@ def split_file(file):
 @st.cache_data(show_spinner="Making quiz...")
 def run_quiz_chain(_docs, topic):  # Changed 'docs' to '_docs' to avoid hashing error
     context = format_docs(_docs)  # Updated variable name from docs to _docs
-    chain = questions_chain | formatting_chain | output_parser
-    return chain.invoke({"context": context})
+    chain = {"context": questions_chain} | formatting_chain | output_parser
+    return chain.invoke(_docs)
 
 
 @st.cache_data(show_spinner="Searching Wikipedia...")

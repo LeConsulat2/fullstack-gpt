@@ -1,16 +1,15 @@
 import streamlit as st
 import subprocess
 import math
-import os
+from pydub import AudioSegment
 import glob
 import openai
-from pydub import AudioSegment
+import os
 from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
-from Dark import set_page_config
 
 llm = ChatOpenAI(
     temperature=0.1,
@@ -69,14 +68,13 @@ def transcribe_chunks(chunk_folder, destination):
         file.write(final_transcription)
 
 
-# # 경로 설정
+# 경로 설정
 # audio_path = "./openai-devday.mp3"
 # chunks_folder = "./.cache/chunks"
 # chunk_size = 10  # 청크 크기 (분 단위)
 
-
 st.set_page_config(
-    page_title="Site",
+    page_title="MeetingGPT",
     page_icon="📃",
 )
 
@@ -93,7 +91,6 @@ st.markdown(
     Get started by uploading a video file via the sidebar.
     """
 )
-
 
 with st.sidebar:
     video = st.file_uploader(
@@ -127,14 +124,17 @@ if video:
     )
 
     with transcription_tab:
-        with open(transcription_path, "r", encoding="utf-8") as file:
-            st.write(file.read())
+        try:
+            with open(transcription_path, "r", encoding="utf-8") as file:
+                st.write(file.read())
+        except UnicodeDecodeError:
+            with open(transcription_path, "r", encoding="latin-1") as file:
+                st.write(file.read())
 
     with summary_tab:
         start = st.button("Generate Summary")
 
         if start:
-
             loader = TextLoader(transcription_path)
             splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
                 chunk_size=800,
@@ -147,7 +147,6 @@ if video:
             Write a concise summary of the following:
             "{text}"
             CONCISE SUMMARY:   
-
             """
             )
 
@@ -164,9 +163,8 @@ if video:
                 -----------------------------------------------
                 {context}
                 -----------------------------------------------
-                Given the new context, refine he original summary. 
+                Given the new context, refine the original summary. 
                 If the context isn't useful, RETURN the original summary.
-
                 """
             )
 

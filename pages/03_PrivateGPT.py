@@ -2,16 +2,24 @@ from typing import Any, Dict, List
 from uuid import UUID
 from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import UnstructuredFileLoader
-from langchain.embeddings import CacheBackedEmbeddings, OllamaEmbeddings
+from langchain.embeddings import CacheBackedEmbeddings
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain.storage import LocalFileStore
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain_community.chat_models import ChatOllama
 from langchain.callbacks.base import BaseCallbackHandler
 import streamlit as st
 from Dark import set_page_config
+from dotenv import load_dotenv
+import os
+import openai
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Retrieve the OpenAI API key from the environment
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 st.set_page_config(
     page_title="PrivateGPT",
@@ -34,16 +42,6 @@ class ChatCallBackHandler(BaseCallbackHandler):
         )  # Update the message box with the accumulated message
 
 
-llm = ChatOllama(
-    model="mistral:latest",
-    temperature=0.1,
-    streaming=True,
-    callbacks=[
-        ChatCallBackHandler(),  # Use the custom callback handler
-    ],
-)
-
-
 class SimpleMemory:
     def __init__(self):
         self.context = ""
@@ -59,13 +57,25 @@ if "memory" not in st.session_state:
     st.session_state.memory = SimpleMemory()
 
 
+class OpenAIEmbeddings:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        return [self.embed_text(text) for text in texts]
+
+    def embed_text(self, text: str) -> List[float]:
+        response = openai.Embedding.create(input=text, model="text-embedding-ada-002")
+        return response["data"][0]["embedding"]
+
+    def embed_query(self, text: str) -> List[float]:
+        return self.embed_text(text)
+
+
 @st.cache_resource(show_spinner="Embedding file...")
 def embed_file(file):
     file_content = file.read()
     file_path = f"./.cache/private_files/{file.name}"
     with open(file_path, "wb") as f:
         f.write(file_content)
-    cache_dir = LocalFileStore(f"./.cache/priavte_embeddings/{file.name}")
+    cache_dir = LocalFileStore(f"./.cache/private_embeddings/{file.name}")
     splitter = CharacterTextSplitter.from_tiktoken_encoder(
         separator="\n",
         chunk_size=600,
@@ -73,7 +83,8 @@ def embed_file(file):
     )
     loader = UnstructuredFileLoader(file_path)
     docs = loader.load_and_split(text_splitter=splitter)
-    embeddings = OllamaEmbeddings(model="mistral:latest")
+
+    embeddings = OpenAIEmbeddings()
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
 
     # Create a FAISS retriever
@@ -109,21 +120,19 @@ def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
 
 
-prompt = ChatPromptTemplate.from_template(
-    """
-            Answer the question using ONLY the following context and not your training data. If you don't know the answer just say you don't know. Don't make anything up.
+prompt_template = """
+Answer the question using ONLY the following context and not your training data. If you don't know the answer just say you don't know. Don't make anything up.
 
-            Context: {context}
-            Question:{question}
-            """
-)
+Context: {context}
+Question: {question}
+"""
 
 st.title("PrivateGPT")
 
 st.markdown(
     """
     Welcome!
-                
+            
     Use this chatbot to ask questions to an AI about your files!
 
     Upload your files on the sidebar.
@@ -154,9 +163,16 @@ if file:
             "question": message,
         }
 
-        chain = prompt | llm
-        with st.chat_message("ai"):
-            response = chain.invoke(chain_input)
-        # No need to call send_message here as it will be handled by the callback
+        formatted_prompt = prompt_template.format(**chain_input)
+
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo-0125",  # Use the correct model name
+            messages=[{"role": "system", "content": formatted_prompt}],
+            n=1,
+            stop=None,
+            temperature=0.1,
+        )
+        ai_message = response.choices[0].message["content"].strip()
+        send_message(ai_message, "ai")
 else:
     st.session_state["messages"] = []  # Initialize messages list if not present
