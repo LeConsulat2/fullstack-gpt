@@ -1,18 +1,21 @@
 import streamlit as st
 import subprocess
 import math
-from pydub import AudioSegment
+import os
 import glob
 import openai
-import os
+from pydub import AudioSegment
 from langchain_community.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
+from Dark import set_page_config
+import chardet
 
 llm = ChatOpenAI(
     temperature=0.1,
+    model="gpt-3.5-turbo-0125",
 )
 
 
@@ -27,7 +30,7 @@ def extract_audio_from_video(video_path):
         "-vn",
         audio_path,
     ]
-    subprocess.run(command)
+    subprocess.run(command, check=True)
 
 
 @st.cache_data()  # 오디오 파일을 청크로 나누기
@@ -64,17 +67,17 @@ def transcribe_chunks(chunk_folder, destination):
                 final_transcription += transcription.text
             else:
                 print(f"Warning: No 'text' attribute in transcription for file {file}")
-    with open(destination, "w", encoding="utf-8") as file:  # 기존 파일에 더함
+    with open(destination, "a", encoding="utf-8") as file:  # 기존 파일에 더함
         file.write(final_transcription)
 
 
-# 경로 설정
+# # 경로 설정
 # audio_path = "./openai-devday.mp3"
 # chunks_folder = "./.cache/chunks"
 # chunk_size = 10  # 청크 크기 (분 단위)
 
 st.set_page_config(
-    page_title="MeetingGPT",
+    page_title="Site",
     page_icon="📃",
 )
 
@@ -125,58 +128,95 @@ if video:
 
     with transcription_tab:
         try:
-            with open(transcription_path, "r", encoding="utf-8") as file:
-                st.write(file.read())
-        except UnicodeDecodeError:
-            with open(transcription_path, "r", encoding="latin-1") as file:
-                st.write(file.read())
+            # Detect file encoding
+            if not os.path.exists(transcription_path):
+                st.error("Transcription file does not exist.")
+            else:
+                with open(transcription_path, "rb") as raw_file:
+                    rawdata = raw_file.read()
+                    result = chardet.detect(rawdata)
+                    encoding = result["encoding"]
+
+                # Read and display file with detected encoding, ignoring errors
+                with open(
+                    transcription_path, "r", encoding=encoding, errors="ignore"
+                ) as file:
+                    content = file.read()
+                    st.write(content)
+        except Exception as e:
+            st.error(f"Error reading file: {e}")
 
     with summary_tab:
         start = st.button("Generate Summary")
 
         if start:
-            loader = TextLoader(transcription_path)
-            splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                chunk_size=800,
-                chunk_overlap=100,
-            )
-            docs = loader.load_and_split(text_splitter=splitter)
+            try:
+                if not os.path.exists(transcription_path):
+                    st.error("Transcription file does not exist.")
+                else:
+                    loader = TextLoader(transcription_path)
 
-            first_summary_prompt = ChatPromptTemplate.from_template(
-                """
-            Write a concise summary of the following:
-            "{text}"
-            CONCISE SUMMARY:   
-            """
-            )
+                    # Displaying content before attempting to load
+                    with open(
+                        transcription_path, "r", encoding=encoding, errors="ignore"
+                    ) as file:
+                        content = file.read()
+                        st.write("Content to be summarized:")
+                        st.write(content)
 
-            first_summary_chain = first_summary_prompt | llm | StrOutputParser()
-            summary = first_summary_chain.invoke({"text": docs[0].page_content})
-
-            refine_prompt = ChatPromptTemplate.from_template(
-                """
-                Your job is to produce a final summary.
-                We have provided an existing summary up to a certain point: 
-                {existing_summary}
-                We have the opportunity to refine the existing summary
-                (only if needed) with some more context below.
-                -----------------------------------------------
-                {context}
-                -----------------------------------------------
-                Given the new context, refine the original summary. 
-                If the context isn't useful, RETURN the original summary.
-                """
-            )
-
-            refine_chain = refine_prompt | llm | StrOutputParser()
-
-            with st.status("Summarising...") as status:
-                for i, doc in enumerate(docs[1:]):
-                    status.update(label=f"Processing document {i}/{len(docs)}")
-                    summary = refine_chain.invoke(
-                        {
-                            "existing_summary": summary,
-                            "context": doc.page_content,
-                        }
+                    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                        chunk_size=800,
+                        chunk_overlap=100,
                     )
-            st.write(summary)
+
+                    try:
+                        docs = loader.load_and_split(text_splitter=splitter)
+                    except Exception as e:
+                        st.error(f"Error during load and split: {e}")
+
+                    first_summary_prompt = ChatPromptTemplate.from_template(
+                        """
+                    Write a concise summary of the following:
+                    "{text}"
+                    CONCISE SUMMARY:   
+
+                    """
+                    )
+
+                    first_summary_chain = first_summary_prompt | llm | StrOutputParser()
+                    summary = first_summary_chain.invoke({"text": docs[0].page_content})
+
+                    refine_prompt = ChatPromptTemplate.from_template(
+                        """
+                        Your job is to produce a final summary.
+                        We have provided an existing summary up to a certain point: 
+                        {existing_summary}
+                        We have the opportunity to refine the existing summary
+                        (only if needed) with some more context below.
+                        -----------------------------------------------
+                        {context}
+                        -----------------------------------------------
+                        Given the new context, refine the original summary. 
+                        If the context isn't useful, RETURN the original summary.
+
+                        """
+                    )
+
+                    refine_chain = refine_prompt | llm | StrOutputParser()
+
+                    with st.status("Summarising...") as status:
+                        for i, doc in enumerate(docs[1:]):
+                            status.update(
+                                label=f"Processing document {i + 1}/{len(docs)}"
+                            )
+                            summary = refine_chain.invoke(
+                                {
+                                    "existing_summary": summary,
+                                    "context": doc.page_content,
+                                }
+                            )
+                    st.write(summary)
+            except RuntimeError as e:
+                st.error(f"Error processing summary: {e}")
+            except Exception as e:
+                st.error(f"Unexpected error: {e}")
