@@ -36,10 +36,10 @@ username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
 
 # Log the API key for debugging (remove this after debugging)
-st.write(f"OpenAI API Key: {openai_api_key}")
-st.write(f"Alpha Vantage API Key: {alpha_vantage_api_key}")
-st.write(f"Username: {username}")
-st.write(f"Password: {password}")
+# st.write(f"OpenAI API Key: {openai_api_key}")
+# st.write(f"Alpha Vantage API Key: {alpha_vantage_api_key}")
+# st.write(f"Username: {username}")
+# st.write(f"Password: {password}")
 
 if not openai_api_key or not alpha_vantage_api_key or not username or not password:
     st.error("Some required environment variables are missing.")
@@ -113,7 +113,7 @@ def embed_file(file):
     loader = UnstructuredFileLoader(file_path)
     docs = loader.load_and_split(text_splitter=splitter)
     st.write(
-        "Embedding API Key (within embed_file):", openai_api_key
+        "Embedding API Key (within embed_file):", openai_api_key=openai_api_key
     )  # Log the API key
     embeddings = OpenAIEmbeddings(
         openai_api_key=openai_api_key
