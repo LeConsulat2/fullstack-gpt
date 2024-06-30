@@ -1,8 +1,6 @@
 import streamlit as st
 import subprocess
 import os
-import glob
-import math
 import openai
 from pydub import AudioSegment
 from langchain.chat_models import ChatOpenAI
@@ -36,9 +34,10 @@ alpha_vantage_api_key = (
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
 
-# Set the PATH environment variable from secrets
-if "environment" in st.secrets:
-    os.environ["PATH"] = st.secrets["environment"]["PATH"]
+# Ensure FFmpeg path is added only once
+ffmpeg_path = "/mount/src/fullstack-gpt/bin/ffmpeg"
+if ffmpeg_path not in os.environ["PATH"]:
+    os.environ["PATH"] += os.pathsep + ffmpeg_path
 
 # Display the full PATH environment variable
 st.write("Full PATH environment variable:")
@@ -47,6 +46,11 @@ st.write(os.environ["PATH"])
 
 def check_ffmpeg_installed():
     try:
+        # Explicitly check if the FFmpeg binary exists in the specified path
+        if not os.path.isfile(os.path.join(ffmpeg_path, "ffmpeg")):
+            st.error(f"FFmpeg executable not found at {ffmpeg_path}")
+            return False
+
         # Check if FFmpeg is accessible
         result = subprocess.run(
             ["ffmpeg", "-version"], check=True, capture_output=True, text=True
