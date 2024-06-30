@@ -138,11 +138,14 @@ if video:
         st.info("Extracting audio from video...")
         extract_audio_from_video(video_path, audio_path)
 
-        st.info("Cutting audio into segments...")
-        cut_audio_in_chunks(audio_path, 10, chunks_folder)
+        if not os.path.exists(audio_path):
+            st.error(f"Audio extraction failed. File not found: {audio_path}")
+        else:
+            st.info("Cutting audio into segments...")
+            cut_audio_in_chunks(audio_path, 10, chunks_folder)
 
-        st.info("Transcribing audio...")
-        transcribe_chunks(chunks_folder, transcription_path)
+            st.info("Transcribing audio...")
+            transcribe_chunks(chunks_folder, transcription_path)
 
     transcription_tab, summary_tab, qa_tab = st.tabs(["Transcript", "Summary", "Q&A"])
 
