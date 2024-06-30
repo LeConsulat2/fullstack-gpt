@@ -24,6 +24,16 @@ def set_page_config(page_title, page_icon):
             background-color: #0E1117;
         }
 
+        /* Sidebar background */
+        .css-1y4p8pa {
+            background-color: #0E1117;
+        }
+
+        /* Top navigation bar */
+        .css-18e3th9 {
+            background-color: #0E1117;
+        }
+
         /* Adjust header text color */
         .css-1q9nb1d h1 {
             color: white;
