@@ -18,7 +18,7 @@ def set_page_config(page_title, page_icon):
             background-color: #0E1117;
             color: white;
         }
-        
+
         /* Ensure the sidebar is also in dark mode */
         .css-1lcbmhc {
             background-color: #0E1117;
@@ -44,7 +44,29 @@ def set_page_config(page_title, page_icon):
             background-color: #1f77b4;
             color: white;
         }
+
+        /* Adjust all input fields to have dark backgrounds */
+        .stTextInput input, .stPasswordInput input, .stSelectbox select, .stTextarea textarea {
+            background-color: #333333;
+            color: white;
+            border: none;
+        }
+
+        /* Adjust labels and other text colors */
+        .stTextInput label, .stPasswordInput label, .stSelectbox label, .stTextarea label {
+            color: white;
+        }
         </style>
         """,
         unsafe_allow_html=True,
     )
+
+
+# Example usage
+set_page_config("Login Page", ":key:")
+
+# Your login form or other content goes here
+st.title("Login")
+st.text_input("Username")
+st.text_input("Password", type="password")
+st.button("Login")
