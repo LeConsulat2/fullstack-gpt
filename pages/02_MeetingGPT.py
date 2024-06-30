@@ -58,6 +58,9 @@ llm = ChatOpenAI(
 
 def check_ffmpeg_installed():
     try:
+        # Explicitly set the PATH environment variable
+        os.environ["PATH"] = os.environ["PATH"] + ";C:\\ProgramData\\chocolatey\\bin"
+
         # Log the PATH environment variable
         st.write("Current PATH environment variable:")
         st.write(os.environ["PATH"])
