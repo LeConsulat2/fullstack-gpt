@@ -44,6 +44,15 @@ llm = ChatOpenAI(
 )
 
 
+# Ensure we clear any previous cached data
+@st.cache_data(ttl=1)  # Cache will expire in 1 second
+def clear_cache():
+    pass
+
+
+clear_cache()
+
+
 @st.cache_data()
 def extract_audio_from_video(video_path, audio_path):
     command = [
@@ -116,6 +125,10 @@ with st.sidebar:
     )
 if video:
     with st.spinner("Loading video..."):
+        # Ensure the .cache directory exists
+        if not os.path.exists("./.cache"):
+            os.makedirs("./.cache")
+
         # Save the uploaded video to a temporary location
         video_path = f"./.cache/{video.name}"
         audio_path = (
@@ -131,6 +144,12 @@ if video:
             .replace(".mov", ".txt")
         )
         chunks_folder = f"./.cache/chunks_{os.path.splitext(video.name)[0]}"
+
+        # Debug: Print file paths
+        st.write(f"Video Path: {video_path}")
+        st.write(f"Audio Path: {audio_path}")
+        st.write(f"Transcription Path: {transcription_path}")
+        st.write(f"Chunks Folder: {chunks_folder}")
 
         with open(video_path, "wb") as f:
             f.write(video.read())
