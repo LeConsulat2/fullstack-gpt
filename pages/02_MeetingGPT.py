@@ -56,6 +56,14 @@ llm = ChatOpenAI(
 )
 
 
+def check_ffmpeg_installed():
+    try:
+        subprocess.run(["ffmpeg", "-version"], check=True)
+        return True
+    except FileNotFoundError:
+        return False
+
+
 @st.cache_data()  # 폴더 내 모든 청크를 텍스트로 변환
 def transcribe_chunks(chunk_folder, destination):
     files = glob.glob(f"{chunk_folder}/*.mp3")
@@ -117,27 +125,34 @@ with st.sidebar:
         type=["mp4", "avi", "mkv", "mov"],
     )
 if video:
-    chunks_folder = f"./.cache/chunks_{os.path.splitext(video.name)[0]}"
-    transcription_path = f"./.cache/{os.path.splitext(video.name)[0]}.txt"
+    # Ensure the .cache directory exists
+    cache_dir = "./.cache"
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+
+    video_path = os.path.join(cache_dir, video.name)
+    chunks_folder = os.path.join(cache_dir, f"chunks_{os.path.splitext(video.name)[0]}")
+    transcription_path = os.path.join(
+        cache_dir, f"{os.path.splitext(video.name)[0]}.txt"
+    )
+
     if not os.path.exists(transcription_path):
         with st.status("Loading video...") as status:
             video_content = video.read()
             # Save the uploaded video to a temporary location
-            video_path = f"./.cache/{video.name}"
-            audio_path = (
-                video_path.replace(".mp4", ".mp3")
-                .replace(".avi", ".mp3")
-                .replace(".mkv", ".mp3")
-                .replace(".mov", ".mp3")
-            )
             with open(video_path, "wb") as f:
                 f.write(video_content)
-            status.update(label="Extracting audio...")
-            extract_audio_from_video(video_path)
-            status.update(label="Cutting audio segments...")
-            cut_audio_in_chunks(audio_path, 10, chunks_folder)
-            status.update(label="Transcribing audio...")
-            transcribe_chunks(chunks_folder, transcription_path)
+
+            if not check_ffmpeg_installed():
+                st.error("FFmpeg is not installed. Please install FFmpeg to proceed.")
+            else:
+                status.update(label="Extracting audio...")
+                audio_path = extract_audio_from_video(video_path)
+                if audio_path:
+                    status.update(label="Cutting audio segments...")
+                    cut_audio_in_chunks(audio_path, 10, chunks_folder)
+                    status.update(label="Transcribing audio...")
+                    transcribe_chunks(chunks_folder, transcription_path)
 
     transcription_tab, summary_tab, qa_tab = st.tabs(
         [
