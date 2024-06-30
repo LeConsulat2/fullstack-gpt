@@ -40,18 +40,14 @@ password = os.getenv("password") or st.secrets["credentials"]["password"]
 llm = ChatOpenAI(
     temperature=0.1,
     model="gpt-3.5-turbo-0125",
-    openai_api_key=openai_api_key,  # Pass the API key here
+    openai_api_key=openai_api_key,  # Pass the API key here directly
 )
-
-# Replace with the absolute path to ffmpeg on your system
-ffmpeg_path = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"  # Update this path
 
 
 @st.cache_data()
-def extract_audio_from_video(video_path):
-    audio_path = video_path.replace("mp4", "mp3")
+def extract_audio_from_video(video_path, audio_path):
     command = [
-        ffmpeg_path,  # Use the absolute path to ffmpeg
+        "ffmpeg",
         "-y",
         "-i",
         video_path,
@@ -59,8 +55,7 @@ def extract_audio_from_video(video_path):
         audio_path,
     ]
     try:
-        result = subprocess.run(command, check=True, capture_output=True, text=True)
-        st.write("FFmpeg Output:", result.stdout)
+        subprocess.run(command, check=True)
     except subprocess.CalledProcessError as e:
         st.error(f"FFmpeg Error: {e.stderr}")
     except FileNotFoundError as e:
@@ -78,16 +73,11 @@ def cut_audio_in_chunks(audio_path, chunk_size, chunks_folder):
         start_time = i * chunk_length
         end_time = (i + 1) * chunk_length
         chunk = track[start_time:end_time]
-        chunk.export(f"{chunks_folder}/openai-devday_{i + 1:02d}.mp3", format="mp3")
-
-
-has_transcript = os.path.exists("./.cache/openai-devday.txt")
+        chunk.export(f"{chunks_folder}/{i + 1:02d}.mp3", format="mp3")
 
 
 @st.cache_data()  # 폴더 내 모든 청크를 텍스트로 변환
 def transcribe_chunks(chunk_folder, destination):
-    if has_transcript:
-        return
     files = glob.glob(f"{chunk_folder}/*.mp3")
     files.sort()
     final_transcription = ""
@@ -128,20 +118,31 @@ if video:
     with st.spinner("Loading video..."):
         # Save the uploaded video to a temporary location
         video_path = f"./.cache/{video.name}"
-        audio_path = video_path.replace("mp4", "mp3")
-        transcription_path = video_path.replace("mp4", "txt")
+        audio_path = (
+            video_path.replace(".mp4", ".mp3")
+            .replace(".avi", ".mp3")
+            .replace(".mkv", ".mp3")
+            .replace(".mov", ".mp3")
+        )
+        transcription_path = (
+            video_path.replace(".mp4", ".txt")
+            .replace(".avi", ".txt")
+            .replace(".mkv", ".txt")
+            .replace(".mov", ".txt")
+        )
+        chunks_folder = f"./.cache/chunks_{os.path.splitext(video.name)[0]}"
 
         with open(video_path, "wb") as f:
             f.write(video.read())
 
         st.info("Extracting audio from video...")
-        extract_audio_from_video(video_path)
+        extract_audio_from_video(video_path, audio_path)
 
         st.info("Cutting audio into segments...")
-        cut_audio_in_chunks(audio_path, 10, "./.cache/chunks")
+        cut_audio_in_chunks(audio_path, 10, chunks_folder)
 
         st.info("Transcribing audio...")
-        transcribe_chunks("./.cache/chunks", transcription_path)
+        transcribe_chunks(chunks_folder, transcription_path)
 
     transcription_tab, summary_tab, qa_tab = st.tabs(["Transcript", "Summary", "Q&A"])
 
