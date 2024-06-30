@@ -43,12 +43,15 @@ llm = ChatOpenAI(
     openai_api_key=openai_api_key,  # Pass the API key here
 )
 
+# Replace with the absolute path to ffmpeg on your system
+ffmpeg_path = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"  # Update this path
+
 
 @st.cache_data()
 def extract_audio_from_video(video_path):
     audio_path = video_path.replace("mp4", "mp3")
     command = [
-        "ffmpeg",
+        ffmpeg_path,  # Use the absolute path to ffmpeg
         "-y",
         "-i",
         video_path,
