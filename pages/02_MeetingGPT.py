@@ -12,14 +12,18 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
+
 st.set_page_config(
     page_title="MeetingGPT",
     page_icon="📃",
 )
+
 # Ensure the user is authenticated
 check_authentication()
+
 # Load environment variables from .env file for local development
 load_dotenv()
+
 # Access secrets in Streamlit Cloud or locally from environment variables
 openai_api_key = (
     os.getenv("OPENAI_API_KEY") or st.secrets["credentials"]["OPENAI_API_KEY"]
@@ -30,6 +34,7 @@ alpha_vantage_api_key = (
 )
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
+
 st.title("MeetingGPT")
 st.markdown(
     """
@@ -40,11 +45,14 @@ st.markdown(
     Get started by uploading a video file via the sidebar.
     """
 )
+
 llm = ChatOpenAI(
     temperature=0.1,
     model="gpt-3.5-turbo-0125",
     openai_api_key=openai_api_key,  # Pass the API key here directly
 )
+
+
 def check_ffmpeg_installed():
     try:
         # Explicitly set the PATH environment variable
@@ -67,28 +75,14 @@ def check_ffmpeg_installed():
         st.write("FFmpeg version output:")
         st.write(result.stdout)
 
-    
-          
-            
-    
-
-          
-          Expand Down
-          
-            
-    
-
-          
-          Expand Up
-    
-    @@ -102,8 +108,9 @@ def extract_audio_from_video(video_path):
-  
         return True
     except subprocess.CalledProcessError as e:
         st.error(f"FFmpeg Error: {e.stderr}")
     except FileNotFoundError:
         st.error("FFmpeg not found in PATH.")
     return False
+
+
 @st.cache_data()  # 폴더 내 모든 청크를 텍스트로 변환
 def transcribe_chunks(chunk_folder, destination):
     files = glob.glob(f"{chunk_folder}/*.mp3")
@@ -102,6 +96,8 @@ def transcribe_chunks(chunk_folder, destination):
                 file=audio_file,
             )
             text_file.write(transcription["text"])
+
+
 @st.cache_data()
 def extract_audio_from_video(video_path):
     audio_path = (
@@ -115,7 +111,7 @@ def extract_audio_from_video(video_path):
         ffmpeg_path,
         "-y",
         "-i",
-        video_path,  
+        video_path,
         "-vn",
         audio_path,
     ]
@@ -127,6 +123,8 @@ def extract_audio_from_video(video_path):
     except FileNotFoundError as e:
         st.error("FFmpeg not found. Please ensure it is installed and in your PATH.")
     return None
+
+
 @st.cache_data()  # 오디오 파일을 청크로 나누기
 def cut_audio_in_chunks(audio_path, chunk_size, chunks_folder):
     track = AudioSegment.from_mp3(audio_path)  # 오디오 파일 로드
@@ -139,11 +137,14 @@ def cut_audio_in_chunks(audio_path, chunk_size, chunks_folder):
         end_time = (i + 1) * chunk_length
         chunk = track[start_time:end_time]
         chunk.export(f"{chunks_folder}/{i + 1:02d}.mp3", format="mp3")
+
+
 with st.sidebar:
     video = st.file_uploader(
         "Upload Video",
         type=["mp4", "avi", "mkv", "mov"],
     )
+
 if video:
     # Ensure the .cache directory exists
     cache_dir = "./.cache"
@@ -170,6 +171,7 @@ if video:
                     cut_audio_in_chunks(audio_path, 10, chunks_folder)
                     status.update(label="Transcribing audio...")
                     transcribe_chunks(chunks_folder, transcription_path)
+
     transcription_tab, summary_tab, qa_tab = st.tabs(
         [
             "Transcription",
@@ -177,12 +179,14 @@ if video:
             "Q&A",
         ]
     )
+
     with transcription_tab:
         if os.path.exists(transcription_path):
             with open(transcription_path, "r", encoding="utf-8") as file:
                 st.write(file.read())
         else:
             st.write("Transcription file not found.")
+
     with summary_tab:
         start = st.button("Generate summary")
         if start:
@@ -197,7 +201,7 @@ if video:
                 Write a concise summary of the following:
                 "{text}"
                 CONCISE SUMMARY:                
-            """
+                """
             )
             first_summary_chain = first_summary_prompt | llm | StrOutputParser()
             summary = first_summary_chain.invoke(
