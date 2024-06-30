@@ -51,7 +51,9 @@ def home_page():
 
             """
         )
-        st.info("🔨  PrivateGPT,  InvestorGPT,  SiteGPT still under construction...🔨")
+        st.info(
+            "🔨  QuizGPT, PrivateGPT,  InvestorGPT,  SiteGPT still under construction...🔨"
+        )
 
     if st.button("Logout"):
         st.session_state.authenticated = False
