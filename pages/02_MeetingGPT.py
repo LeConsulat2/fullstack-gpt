@@ -81,7 +81,12 @@ def transcribe_chunks(chunk_folder, destination):
 def extract_audio_from_video(video_path):
     if has_transcription:
         return
-    audio_path = video_path.replace("mp4", "mp3")
+    audio_path = (
+        video_path.replace("mp4", "mp3")
+        .replace("avi", "mp3")
+        .replace("mkv", "mp3")
+        .replace("mov", "mp3")
+    )
     command = [
         "ffmpeg",
         "-y",
