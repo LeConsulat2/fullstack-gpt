@@ -160,7 +160,7 @@ if video:
         )
 
         with transcription_tab:
-            with open(transcription_path, "r") as file:
+            with open(transcription_path, "r", encoding="utf-8") as file:
                 st.write(file.read())
 
         with summary_tab:
