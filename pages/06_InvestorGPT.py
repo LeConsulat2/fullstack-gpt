@@ -8,7 +8,7 @@ from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 from langchain.agents import initialize_agent, AgentType
 from langchain.utilities import DuckDuckGoSearchAPIWrapper
-from Dark import set_page_config
+from Dark import set_pages_config
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 

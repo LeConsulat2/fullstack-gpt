@@ -10,7 +10,7 @@ from langchain.vectorstores.faiss import FAISS
 from langchain.chat_models import ChatOllama
 from langchain.callbacks.base import BaseCallbackHandler
 import streamlit as st
-from Dark import set_page_config
+from Dark import set_pages_config
 from dotenv import load_dotenv
 import os
 import openai

@@ -8,7 +8,7 @@ from langchain.callbacks import StreamingStdOutCallbackHandler
 import streamlit as st
 from langchain.retrievers import WikipediaRetriever
 from langchain.schema import BaseOutputParser
-from Dark import set_page_config
+from Dark import set_pages_config
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 

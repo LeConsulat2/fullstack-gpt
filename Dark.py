@@ -2,7 +2,7 @@ import streamlit as st
 
 
 def set_page_config(page_title, page_icon):
-    st.set_page_config(
+    st.set_pages_config(
         page_title=page_title,
         page_icon=page_icon,
         layout="centered",
