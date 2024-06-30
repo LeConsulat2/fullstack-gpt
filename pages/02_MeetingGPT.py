@@ -1,5 +1,6 @@
 import streamlit as st
 import subprocess
+import math
 import os
 import openai
 from pydub import AudioSegment
@@ -57,14 +58,17 @@ llm = ChatOpenAI(
     openai_api_key=openai_api_key,  # Pass the API key here directly
 )
 
+
 def check_ffmpeg_installed():
     try:
         # Log the full PATH environment variable
         st.write("Full PATH environment variable:")
         st.write(os.environ["PATH"])
-        
+
         # Check if FFmpeg is accessible
-        result = subprocess.run(["ffmpeg", "-version"], check=True, capture_output=True, text=True)
+        result = subprocess.run(
+            ["ffmpeg", "-version"], check=True, capture_output=True, text=True
+        )
         st.write("FFmpeg version output:")
         st.write(result.stdout)
         return True
@@ -74,17 +78,21 @@ def check_ffmpeg_installed():
         st.error("FFmpeg not found.")
     return False
 
+
 @st.cache_data()  # 폴더 내 모든 청크를 텍스트로 변환
 def transcribe_chunks(chunk_folder, destination):
     files = glob.glob(f"{chunk_folder}/*.mp3")
     files.sort()
     for file in files:
-        with open(file, "rb") as audio_file, open(destination, "a", encoding="utf-8") as text_file:
+        with open(file, "rb") as audio_file, open(
+            destination, "a", encoding="utf-8"
+        ) as text_file:
             transcription = openai.Audio.transcribe(
                 model="whisper-1",
                 file=audio_file,
             )
             text_file.write(transcription["text"])
+
 
 @st.cache_data()
 def extract_audio_from_video(video_path):
@@ -112,6 +120,7 @@ def extract_audio_from_video(video_path):
         st.error("FFmpeg not found. Please ensure it is installed and in your PATH.")
     return None
 
+
 @st.cache_data()  # 오디오 파일을 청크로 나누기
 def cut_audio_in_chunks(audio_path, chunk_size, chunks_folder):
     track = AudioSegment.from_mp3(audio_path)  # 오디오 파일 로드
@@ -121,9 +130,10 @@ def cut_audio_in_chunks(audio_path, chunk_size, chunks_folder):
         os.makedirs(chunks_folder)
     for i in range(chunks):  # 각 청크를 개별 파일로 내보내기
         start_time = i * chunk_length
-        end_time = (i + 1) * chunk length
+        end_time = (i + 1) * chunk_length
         chunk = track[start_time:end_time]
         chunk.export(f"{chunks_folder}/{i + 1:02d}.mp3", format="mp3")
+
 
 with st.sidebar:
     video = st.file_uploader(
@@ -138,7 +148,9 @@ if video:
 
     video_path = os.path.join(cache_dir, video.name)
     chunks_folder = os.path.join(cache_dir, f"chunks_{os.path.splitext(video.name)[0]}")
-    transcription_path = os.path.join(cache_dir, f"{os.path.splitext(video.name)[0]}.txt")
+    transcription_path = os.path.join(
+        cache_dir, f"{os.path.splitext(video.name)[0]}.txt"
+    )
 
     if not os.path.exists(transcription_path):
         with st.status("Loading video...") as status:
