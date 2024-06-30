@@ -121,7 +121,7 @@ with st.sidebar:
     )
 if video:
     chunks_folder = f"./.cache/chunks_{os.path.splitext(video.name)[0]}"
-    with st.spinner("Loading video...") as status:
+    with st.status("Loading video...") as status:
         video_content = video.read()
         # Save the uploaded video to a temporary location
         video_path = f"./.cache/{video.name}"
