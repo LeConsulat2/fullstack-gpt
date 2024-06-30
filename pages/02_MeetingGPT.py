@@ -58,10 +58,22 @@ llm = ChatOpenAI(
 
 def check_ffmpeg_installed():
     try:
-        subprocess.run(["ffmpeg", "-version"], check=True)
+        # Log the PATH environment variable
+        st.write("Current PATH environment variable:")
+        st.write(os.environ["PATH"])
+
+        # Check if FFmpeg is accessible
+        result = subprocess.run(
+            ["ffmpeg", "-version"], check=True, capture_output=True, text=True
+        )
+        st.write("FFmpeg version output:")
+        st.write(result.stdout)
         return True
+    except subprocess.CalledProcessError as e:
+        st.error(f"FFmpeg Error: {e.stderr}")
     except FileNotFoundError:
-        return False
+        st.error("FFmpeg not found in PATH.")
+    return False
 
 
 @st.cache_data()  # 폴더 내 모든 청크를 텍스트로 변환
@@ -73,8 +85,8 @@ def transcribe_chunks(chunk_folder, destination):
             destination, "a", encoding="utf-8"
         ) as text_file:
             transcription = openai.Audio.transcribe(
-                audio_file,
                 model="whisper-1",
+                file=audio_file,
             )
             text_file.write(transcription["text"])
 
