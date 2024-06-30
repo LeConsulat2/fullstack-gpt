@@ -10,7 +10,8 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from bs4 import BeautifulSoup
-import html2text
+
+# import html2text
 from dotenv import load_dotenv
 from Dark import set_page_config
 from Utils import check_authentication  # Import the utility function
