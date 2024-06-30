@@ -44,9 +44,7 @@ def home_page():
         st.markdown(
             """
             - DocumentGPT
-            
-            - QuizGPT
-             
+                         
             - MeetingGPT 
 
             """
