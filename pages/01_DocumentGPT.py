@@ -83,6 +83,10 @@ class SimpleMemory:
 if "memory" not in st.session_state:
     st.session_state.memory = SimpleMemory()
 
+# Ensure the directories exist
+os.makedirs("./.cache/files/", exist_ok=True)
+os.makedirs("./.cache/embeddings/", exist_ok=True)
+
 
 @st.cache_resource(show_spinner="Embedding file...")
 def embed_file(file):
