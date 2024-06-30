@@ -42,6 +42,7 @@ password = os.getenv("password") or st.secrets["credentials"]["password"]
 llm = ChatOpenAI(
     temperature=0.1,
     model="gpt-3.5-turbo-0125",
+    openai_api_key=openai_api_key,  # Pass the API key here
 )
 
 
@@ -193,7 +194,7 @@ if video:
                         text_loader = TextLoader(content)
                         # Updated to use SemanticChunker
                         splitter = RecursiveCharacterTextSplitter(
-                            OpenAIEmbeddings(api_key=openai_api_key)
+                            OpenAIEmbeddings(openai_api_key=openai_api_key)
                         )
                         docs = splitter.create_documents([content])
                     except Exception as e:
