@@ -1,6 +1,8 @@
 import streamlit as st
 import subprocess
 import os
+import glob
+import math
 import openai
 from pydub import AudioSegment
 from langchain.chat_models import ChatOpenAI
@@ -11,6 +13,7 @@ from langchain.schema import StrOutputParser
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 
+# Ensure `set_page_config()` is the first Streamlit command
 st.set_page_config(
     page_title="MeetingGPT",
     page_icon="📃",
@@ -37,8 +40,29 @@ password = os.getenv("password") or st.secrets["credentials"]["password"]
 if "environment" in st.secrets:
     os.environ["PATH"] = st.secrets["environment"]["PATH"]
 
-# Add local FFmpeg binary to the PATH
-os.environ["PATH"] += os.pathsep + os.path.abspath("bin/ffmpeg")
+# Display the full PATH environment variable
+st.write("Full PATH environment variable:")
+st.write(os.environ["PATH"])
+
+
+def check_ffmpeg_installed():
+    try:
+        # Check if FFmpeg is accessible
+        result = subprocess.run(
+            ["ffmpeg", "-version"], check=True, capture_output=True, text=True
+        )
+        st.write("FFmpeg version output:")
+        st.write(result.stdout)
+        return True
+    except subprocess.CalledProcessError as e:
+        st.error(f"FFmpeg Error: {e.stderr}")
+    except FileNotFoundError:
+        st.error("FFmpeg not found.")
+    return False
+
+
+if not check_ffmpeg_installed():
+    st.error("FFmpeg is not installed. Please ensure FFmpeg is in the PATH.")
 
 st.title("MeetingGPT")
 
@@ -59,22 +83,6 @@ llm = ChatOpenAI(
     model="gpt-3.5-turbo-0125",
     openai_api_key=openai_api_key,  # Pass the API key here directly
 )
-
-
-def check_ffmpeg_installed():
-    try:
-        # Check if FFmpeg is accessible
-        result = subprocess.run(
-            ["ffmpeg", "-version"], check=True, capture_output=True, text=True
-        )
-        st.write("FFmpeg version output:")
-        st.write(result.stdout)
-        return True
-    except subprocess.CalledProcessError as e:
-        st.error(f"FFmpeg Error: {e.stderr}")
-    except FileNotFoundError:
-        st.error("FFmpeg not found.")
-    return False
 
 
 @st.cache_data()  # 폴더 내 모든 청크를 텍스트로 변환
