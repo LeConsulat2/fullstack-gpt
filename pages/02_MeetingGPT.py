@@ -58,15 +58,10 @@ llm = ChatOpenAI(
 
 def check_ffmpeg_installed():
     try:
-        # Explicitly set the PATH environment variable
-        os.environ["PATH"] = os.environ["PATH"] + ";C:\\ProgramData\\chocolatey\\bin"
-
-        # Log the full PATH environment variable
-        st.write("Full PATH environment variable:")
-        st.write(os.environ["PATH"])
+        # Explicitly set the path to the FFmpeg executable
+        ffmpeg_path = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"
 
         # Check if FFmpeg is available
-        ffmpeg_path = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"
         if not os.path.isfile(ffmpeg_path):
             st.error(f"FFmpeg not found at {ffmpeg_path}.")
             return False
@@ -81,7 +76,7 @@ def check_ffmpeg_installed():
     except subprocess.CalledProcessError as e:
         st.error(f"FFmpeg Error: {e.stderr}")
     except FileNotFoundError:
-        st.error("FFmpeg not found in PATH.")
+        st.error("FFmpeg not found.")
     return False
 
 
