@@ -4,12 +4,9 @@ import math
 import glob
 import openai
 import os
-import chardet
 from pydub import AudioSegment
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
 from dotenv import load_dotenv
@@ -37,7 +34,6 @@ alpha_vantage_api_key = (
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
 
-
 st.title("MeetingGPT")
 
 st.markdown(
@@ -58,7 +54,6 @@ llm = ChatOpenAI(
     openai_api_key=openai_api_key,  # Pass the API key here directly
 )
 
-
 has_transcription = os.path.exists("./.cache")
 
 
@@ -69,7 +64,9 @@ def transcribe_chunks(chunk_folder, destination):
     files = glob.glob(f"{chunk_folder}/*.mp3")
     files.sort()
     for file in files:
-        with open(file, "rb") as audio_file, open(destination, "a") as text_file:
+        with open(file, "rb") as audio_file, open(
+            destination, "a", encoding="utf-8"
+        ) as text_file:
             transcription = openai.Audio.transcribe(
                 model="whisper-1",
                 file=audio_file,
@@ -125,7 +122,7 @@ with st.sidebar:
         type=["mp4", "avi", "mkv", "mov"],
     )
 if video:
-    chunks_folder = "./.cache/chunks"
+    chunks_folder = f"./.cache/chunks_{os.path.splitext(video.name)[0]}"
     with st.status("Loading video...") as status:
         video_content = video.read()
         # Save the uploaded video to a temporary location
@@ -160,8 +157,11 @@ if video:
         )
 
         with transcription_tab:
-            with open(transcription_path, "r", encoding="utf-8") as file:
-                st.write(file.read())
+            if os.path.exists(transcription_path):
+                with open(transcription_path, "r", encoding="utf-8") as file:
+                    st.write(file.read())
+            else:
+                st.write("Transcription file not found.")
 
         with summary_tab:
             start = st.button("Generate summary")
