@@ -12,7 +12,6 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
-from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 
@@ -38,7 +37,6 @@ alpha_vantage_api_key = (
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
 
-
 llm = ChatOpenAI(
     temperature=0.1,
     model="gpt-3.5-turbo-0125",
@@ -57,7 +55,11 @@ def extract_audio_from_video(video_path):
         "-vn",
         audio_path,
     ]
-    subprocess.run(command, check=True)
+    try:
+        result = subprocess.run(command, check=True, capture_output=True, text=True)
+        st.write("FFmpeg Output:", result.stdout)
+    except subprocess.CalledProcessError as e:
+        st.error(f"FFmpeg Error: {e.stderr}")
 
 
 @st.cache_data()  # 오디오 파일을 청크로 나누기
@@ -99,10 +101,9 @@ def transcribe_chunks(chunk_folder, destination):
 
 
 # 경로 설정
-audio_path = "./openai-devday.mp3"
-chunks_folder = "./.cache/chunks"
-chunk_size = 10  # 청크 크기 (분 단위)
-
+# audio_path = "./openai-devday.mp3"
+# chunks_folder = "./.cache/chunks"
+# chunk_size = 10  청크 크기 (분 단위)
 
 st.title("MeetingGPT")
 
