@@ -73,8 +73,8 @@ def transcribe_chunks(chunk_folder, destination):
             destination, "a", encoding="utf-8"
         ) as text_file:
             transcription = openai.Audio.transcribe(
+                audio_file,
                 model="whisper-1",
-                file=audio_file,
             )
             text_file.write(transcription["text"])
 
