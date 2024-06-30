@@ -1,6 +1,5 @@
 import streamlit as st
 import subprocess
-import math
 import os
 import openai
 from pydub import AudioSegment
@@ -38,6 +37,9 @@ password = os.getenv("password") or st.secrets["credentials"]["password"]
 if "environment" in st.secrets:
     os.environ["PATH"] = st.secrets["environment"]["PATH"]
 
+# Add local FFmpeg binary to the PATH
+os.environ["PATH"] += os.pathsep + os.path.abspath("bin/ffmpeg")
+
 st.title("MeetingGPT")
 
 st.markdown(
@@ -61,10 +63,6 @@ llm = ChatOpenAI(
 
 def check_ffmpeg_installed():
     try:
-        # Log the full PATH environment variable
-        st.write("Full PATH environment variable:")
-        st.write(os.environ["PATH"])
-
         # Check if FFmpeg is accessible
         result = subprocess.run(
             ["ffmpeg", "-version"], check=True, capture_output=True, text=True
@@ -102,9 +100,8 @@ def extract_audio_from_video(video_path):
         .replace("mkv", "mp3")
         .replace("mov", "mp3")
     )
-    ffmpeg_path = "ffmpeg"
     command = [
-        ffmpeg_path,
+        "ffmpeg",
         "-y",
         "-i",
         video_path,
