@@ -44,6 +44,21 @@ llm = ChatOpenAI(
 )
 
 
+st.title("MeetingGPT")
+
+st.markdown(
+    """
+    ## Welcome to MeetingGPT
+
+    Experience seamless transcription and summary of your meetings with MeetingGPT. 
+    
+    Upload your video, and we'll provide a detailed transcript, a concise summary, and a chatbot to assist with any queries you might have.
+
+    Get started by uploading a video file via the sidebar.
+    """
+)
+
+
 # Ensure we clear any previous cached data
 @st.cache_data(ttl=1)  # Cache will expire in 1 second
 def clear_cache():
@@ -103,20 +118,6 @@ def transcribe_chunks(chunk_folder, destination):
     with open(destination, "a", encoding="utf-8") as file:  # 기존 파일에 더함
         file.write(final_transcription)
 
-
-st.title("MeetingGPT")
-
-st.markdown(
-    """
-    ## Welcome to MeetingGPT
-
-    Experience seamless transcription and summary of your meetings with MeetingGPT. 
-    
-    Upload your video, and we'll provide a detailed transcript, a concise summary, and a chatbot to assist with any queries you might have.
-
-    Get started by uploading a video file via the sidebar.
-    """
-)
 
 with st.sidebar:
     video = st.file_uploader(
