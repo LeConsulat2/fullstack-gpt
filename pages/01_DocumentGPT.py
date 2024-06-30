@@ -112,6 +112,9 @@ def embed_file(file):
     )
     loader = UnstructuredFileLoader(file_path)
     docs = loader.load_and_split(text_splitter=splitter)
+    st.write(
+        "Embedding API Key (within embed_file):", openai_api_key
+    )  # Log the API key
     embeddings = OpenAIEmbeddings(
         openai_api_key=openai_api_key
     )  # Pass the API key here
