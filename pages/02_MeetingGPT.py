@@ -61,13 +61,19 @@ def check_ffmpeg_installed():
         # Explicitly set the PATH environment variable
         os.environ["PATH"] = os.environ["PATH"] + ";C:\\ProgramData\\chocolatey\\bin"
 
-        # Log the PATH environment variable
-        st.write("Current PATH environment variable:")
+        # Log the full PATH environment variable
+        st.write("Full PATH environment variable:")
         st.write(os.environ["PATH"])
+
+        # Check if FFmpeg is available
+        ffmpeg_path = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"
+        if not os.path.isfile(ffmpeg_path):
+            st.error(f"FFmpeg not found at {ffmpeg_path}.")
+            return False
 
         # Check if FFmpeg is accessible
         result = subprocess.run(
-            ["ffmpeg", "-version"], check=True, capture_output=True, text=True
+            [ffmpeg_path, "-version"], check=True, capture_output=True, text=True
         )
         st.write("FFmpeg version output:")
         st.write(result.stdout)
@@ -102,8 +108,9 @@ def extract_audio_from_video(video_path):
         .replace("mkv", "mp3")
         .replace("mov", "mp3")
     )
+    ffmpeg_path = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"
     command = [
-        "ffmpeg",
+        ffmpeg_path,
         "-y",
         "-i",
         video_path,
