@@ -115,18 +115,7 @@ def extract_audio_from_video(video_path):
         ffmpeg_path,
         "-y",
         "-i",
-        video_path,
-
-    
-          
-            
-    
-
-          
-          Expand Down
-    
-    
-  
+        video_path,  
         "-vn",
         audio_path,
     ]
