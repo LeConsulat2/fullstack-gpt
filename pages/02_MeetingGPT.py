@@ -154,25 +154,6 @@ if video:
             ]
         )
 
-        with open(video_path, "wb") as f:
-            f.write(video.read())
-
-        st.info("Extracting audio from video...")
-        extract_audio_from_video(video_path, audio_path)
-
-        if not os.path.exists(audio_path):
-            st.error(f"Audio extraction failed. File not found: {audio_path}")
-        else:
-            st.info("Cutting audio into segments...")
-            cut_audio_in_chunks(audio_path, 10, chunks_folder)
-
-            st.info("Transcribing audio...")
-            transcribe_chunks(chunks_folder, transcription_path)
-
-        transcription_tab, summary_tab, qa_tab = st.tabs(
-            ["Transcription", "Summary", "Q&A"]
-        )
-
         with transcription_tab:
             with open(transcription_path, "r") as file:
                 st.write(file.read())
