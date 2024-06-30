@@ -25,22 +25,25 @@ check_authentication()
 load_dotenv()
 
 # Access secrets in Streamlit Cloud or locally from environment variables
-openai_api_key = os.getenv(
-    "OPENAI_API_KEY", st.secrets.get("credentials", {}).get("OPENAI_API_KEY")
+openai_api_key = (
+    os.getenv("OPENAI_API_KEY") or st.secrets["credentials"]["OPENAI_API_KEY"]
 )
-alpha_vantage_api_key = os.getenv(
-    "ALPHA_VANTAGE_API_KEY",
-    st.secrets.get("credentials", {}).get("ALPHA_VANTAGE_API_KEY"),
+alpha_vantage_api_key = (
+    os.getenv("ALPHA_VANTAGE_API_KEY")
+    or st.secrets["credentials"]["ALPHA_VANTAGE_API_KEY"]
 )
-username = os.getenv("username", st.secrets.get("credentials", {}).get("username"))
-password = os.getenv("password", st.secrets.get("credentials", {}).get("password"))
+username = os.getenv("username") or st.secrets["credentials"]["username"]
+password = os.getenv("password") or st.secrets["credentials"]["password"]
+
+# Log the API key for debugging (remove this after debugging)
+st.write(f"OpenAI API Key: {openai_api_key}")
+st.write(f"Alpha Vantage API Key: {alpha_vantage_api_key}")
+st.write(f"Username: {username}")
+st.write(f"Password: {password}")
 
 if not openai_api_key or not alpha_vantage_api_key or not username or not password:
     st.error("Some required environment variables are missing.")
     st.stop()
-
-# Example usage
-st.write("Secrets loaded successfully.")
 
 
 class ChatCallBackHandler(BaseCallbackHandler):
