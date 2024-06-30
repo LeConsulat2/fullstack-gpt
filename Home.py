@@ -1,10 +1,10 @@
 import streamlit as st
 from Login import login_page
-from Dark import set_pages_config
+from Dark import set_page_config
 from Utils import check_authentication  # Import the utility function
 
 # Set the page configuration
-st.set_page_config(page_title="AUT GPT Home", page_icon="💬")
+set_page_config(page_title="AUT GPT Home", page_icon="💬")
 
 # Initialize session state variables if not present
 if "page" not in st.session_state:
