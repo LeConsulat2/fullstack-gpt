@@ -89,10 +89,12 @@ def extract_audio_from_video(video_path):
     ]
     try:
         subprocess.run(command, check=True)
+        return audio_path
     except subprocess.CalledProcessError as e:
         st.error(f"FFmpeg Error: {e.stderr}")
     except FileNotFoundError as e:
-        st.error(f"FFmpeg not found: {e}")
+        st.error("FFmpeg not found. Please ensure it is installed and in your PATH.")
+    return None
 
 
 @st.cache_data()  # 오디오 파일을 청크로 나누기
