@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 
 st.set_page_config(
-    page_title="Site",
+    page_title="MeetingGPT",
     page_icon="📃",
 )
 
@@ -60,6 +60,8 @@ def extract_audio_from_video(video_path):
         st.write("FFmpeg Output:", result.stdout)
     except subprocess.CalledProcessError as e:
         st.error(f"FFmpeg Error: {e.stderr}")
+    except FileNotFoundError as e:
+        st.error(f"FFmpeg not found: {e}")
 
 
 @st.cache_data()  # 오디오 파일을 청크로 나누기
@@ -100,11 +102,6 @@ def transcribe_chunks(chunk_folder, destination):
         file.write(final_transcription)
 
 
-# 경로 설정
-# audio_path = "./openai-devday.mp3"
-# chunks_folder = "./.cache/chunks"
-# chunk_size = 10  청크 크기 (분 단위)
-
 st.title("MeetingGPT")
 
 st.markdown(
@@ -121,38 +118,32 @@ st.markdown(
 
 with st.sidebar:
     video = st.file_uploader(
-        "Video",
+        "Upload Video",
         type=["mp4", "avi", "mkv", "mov"],
     )
 if video:
-    with st.status("Loading video...") as status:
-        video_content = video.read()
+    with st.spinner("Loading video..."):
+        # Save the uploaded video to a temporary location
         video_path = f"./.cache/{video.name}"
         audio_path = video_path.replace("mp4", "mp3")
         transcription_path = video_path.replace("mp4", "txt")
-        with open(video_path, "wb") as f:
-            f.write(video_content)
 
-        status.update(label="Extracting audio...")
+        with open(video_path, "wb") as f:
+            f.write(video.read())
+
+        st.info("Extracting audio from video...")
         extract_audio_from_video(video_path)
 
-        status.update(label="Cutting audio segments...")
+        st.info("Cutting audio into segments...")
         cut_audio_in_chunks(audio_path, 10, "./.cache/chunks")
 
-        status.update(label="Transcribing audio...")
+        st.info("Transcribing audio...")
         transcribe_chunks("./.cache/chunks", transcription_path)
 
-    transcription_tab, summary_tab, qa_tab = st.tabs(
-        [
-            "Transcript",
-            "Summary",
-            "Q&A",
-        ]
-    )
+    transcription_tab, summary_tab, qa_tab = st.tabs(["Transcript", "Summary", "Q&A"])
 
     with transcription_tab:
         try:
-            # Detect file encoding
             if not os.path.exists(transcription_path):
                 st.error("Transcription file does not exist.")
             else:
@@ -161,7 +152,6 @@ if video:
                     result = chardet.detect(rawdata)
                     encoding = result["encoding"]
 
-                # Read and display file with detected encoding, ignoring errors
                 with open(
                     transcription_path, "r", encoding=encoding, errors="ignore"
                 ) as file:
@@ -178,7 +168,6 @@ if video:
                 if not os.path.exists(transcription_path):
                     st.error("Transcription file does not exist.")
                 else:
-                    # Manually read file content
                     try:
                         with open(
                             transcription_path, "r", encoding=encoding, errors="ignore"
@@ -190,25 +179,22 @@ if video:
                         st.error(f"Error reading content: {e}")
                         st.stop()
 
-                    # Use TextLoader to process manually read content
                     try:
                         text_loader = TextLoader(content)
-                        # Updated to use SemanticChunker
                         splitter = RecursiveCharacterTextSplitter(
                             OpenAIEmbeddings(openai_api_key=openai_api_key)
                         )
                         docs = splitter.create_documents([content])
                     except Exception as e:
                         st.error(f"Error during load and split: {e}")
-                        st.stop()  # Stop further processing if there's an error
+                        st.stop()
 
                     first_summary_prompt = ChatPromptTemplate.from_template(
                         """
-                    Write a concise summary of the following:
-                    "{text}"
-                    CONCISE SUMMARY:   
-
-                    """
+                        Write a concise summary of the following:
+                        "{text}"
+                        CONCISE SUMMARY:
+                        """
                     )
 
                     first_summary_chain = first_summary_prompt | llm | StrOutputParser()
@@ -217,26 +203,22 @@ if video:
                     refine_prompt = ChatPromptTemplate.from_template(
                         """
                         Your job is to produce a final summary.
-                        We have provided an existing summary up to a certain point: 
+                        We have provided an existing summary up to a certain point:
                         {existing_summary}
                         We have the opportunity to refine the existing summary
                         (only if needed) with some more context below.
                         -----------------------------------------------
                         {context}
                         -----------------------------------------------
-                        Given the new context, refine the original summary. 
+                        Given the new context, refine the original summary.
                         If the context isn't useful, RETURN the original summary.
-
                         """
                     )
 
                     refine_chain = refine_prompt | llm | StrOutputParser()
 
-                    with st.status("Summarising...") as status:
+                    with st.spinner("Summarizing..."):
                         for i, doc in enumerate(docs[1:]):
-                            status.update(
-                                label=f"Processing document {i + 1}/{len(docs)}"
-                            )
                             summary = refine_chain.invoke(
                                 {
                                     "existing_summary": summary,
