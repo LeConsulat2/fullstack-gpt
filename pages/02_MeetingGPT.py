@@ -16,18 +16,28 @@ from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 
+st.set_page_config(
+    page_title="Site",
+    page_icon="📃",
+)
+
 # Ensure the user is authenticated
 check_authentication()
 
-
+# Load environment variables from .env file for local development
 load_dotenv()
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
-
-llm = ChatOpenAI(
-    temperature=0.1,
-    model="gpt-3.5-turbo-0125",
+# Access secrets in Streamlit Cloud or locally from environment variables
+openai_api_key = (
+    os.getenv("OPENAI_API_KEY") or st.secrets["credentials"]["OPENAI_API_KEY"]
 )
+alpha_vantage_api_key = (
+    os.getenv("ALPHA_VANTAGE_API_KEY")
+    or st.secrets["credentials"]["ALPHA_VANTAGE_API_KEY"]
+)
+username = os.getenv("username") or st.secrets["credentials"]["username"]
+password = os.getenv("password") or st.secrets["credentials"]["password"]
+
 
 llm = ChatOpenAI(
     temperature=0.1,
@@ -92,10 +102,6 @@ audio_path = "./openai-devday.mp3"
 chunks_folder = "./.cache/chunks"
 chunk_size = 10  # 청크 크기 (분 단위)
 
-st.set_page_config(
-    page_title="Site",
-    page_icon="📃",
-)
 
 st.title("MeetingGPT")
 
