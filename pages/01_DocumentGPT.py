@@ -61,15 +61,22 @@ class ChatCallBackHandler(BaseCallbackHandler):
         )  # Update the message box with the accumulated message
 
 
-llm = ChatOpenAI(
-    model="gpt-3.5-turbo",
-    temperature=0.1,
-    streaming=True,
-    callbacks=[
-        ChatCallBackHandler(),  # Use the custom callback handler
-    ],
-    openai_api_key=openai_api_key,  # Pass the API key here
-)
+# Log the exact usage of the API key
+st.write("Initializing ChatOpenAI with the provided API key...")
+try:
+    llm = ChatOpenAI(
+        model="gpt-3.5-turbo",
+        temperature=0.1,
+        streaming=True,
+        callbacks=[
+            ChatCallBackHandler(),  # Use the custom callback handler
+        ],
+        openai_api_key=openai_api_key,  # Pass the API key here
+    )
+    st.write("ChatOpenAI initialized successfully.")
+except Exception as e:
+    st.error(f"Failed to initialize ChatOpenAI: {e}")
+    st.stop()
 
 
 class SimpleMemory:
