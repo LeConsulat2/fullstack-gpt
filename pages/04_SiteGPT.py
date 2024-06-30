@@ -31,7 +31,6 @@ st.markdown(
 # Ensure the user is authenticated
 check_authentication()
 
-
 load_dotenv()
 
 # Access secrets in Streamlit Cloud or locally from environment variables
