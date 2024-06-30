@@ -62,7 +62,7 @@ class ChatCallBackHandler(BaseCallbackHandler):
 
 
 # Log the exact usage of the API key
-st.write("Initializing ChatOpenAI with the provided API key...")
+# st.write("Initializing ChatOpenAI with the provided API key...")
 try:
     llm = ChatOpenAI(
         model="gpt-3.5-turbo",
@@ -73,7 +73,7 @@ try:
         ],
         openai_api_key=openai_api_key,  # Pass the API key here
     )
-    st.write("ChatOpenAI initialized successfully.")
+    # st.write("ChatOpenAI initialized successfully.")
 except Exception as e:
     st.error(f"Failed to initialize ChatOpenAI: {e}")
     st.stop()
@@ -112,9 +112,9 @@ def embed_file(file):
     )
     loader = UnstructuredFileLoader(file_path)
     docs = loader.load_and_split(text_splitter=splitter)
-    st.write(
-        "Embedding API Key (within embed_file):", openai_api_key=openai_api_key
-    )  # Log the API key
+    # st.write(
+    #     "Embedding API Key (within embed_file):", openai_api_key=openai_api_key
+    # )   Log the API key
     embeddings = OpenAIEmbeddings(
         openai_api_key=openai_api_key
     )  # Pass the API key here
