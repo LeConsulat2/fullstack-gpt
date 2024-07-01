@@ -15,6 +15,7 @@ st.set_page_config(
     page_title="QuizGPT",
     page_icon="❓",
 )
+
 st.title("QuizGPT")
 
 
@@ -60,6 +61,7 @@ llm = ChatOpenAI(
     model="gpt-3.5-turbo-0125",
     streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()],
+    openai_api_key=openai_api_key,  # Pass the API key here
 )
 
 
