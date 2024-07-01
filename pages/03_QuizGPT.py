@@ -37,14 +37,6 @@ st.set_page_config(
 
 st.title("QuizGPT")
 
-# Under construction message
-# st.markdown(
-#     """
-#     ## This page is under construction 🔨
-#     Working on it, once fixed, this page will be up and running for you to use.
-# """
-# )
-
 llm = ChatOpenAI(
     temperature=0.1,
     model="gpt-3.5-turbo",
