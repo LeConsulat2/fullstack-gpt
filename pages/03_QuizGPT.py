@@ -250,7 +250,7 @@ def split_file(file):
 
 @st.cache_data(show_spinner="Making quiz...")
 def run_quiz_chain(_docs, topic):
-    chain = {"context": questions_chain} | formatting_chain
+    chain = {"context": questions_chain} | formatting_chain  # | output_parser
     return chain.invoke(_docs)
 
 
@@ -308,4 +308,4 @@ else:
                 st.success("Correct!")
             elif value is not None:
                 st.error("Wrong!")
-        button = st.form_submit_button()
+        button = st.form_submit_button("Submit")
