@@ -234,6 +234,7 @@ formatting_chain = formatting_prompt | llm
 @st.cache_data(show_spinner="Loading file...")
 def split_file(file):
     file_content = file.read()
+    os.makedirs("./.cache/quiz_files", exist_ok=True)  # Ensure the directory exists
     file_path = f"./.cache/quiz_files/{file.name}"
     with open(file_path, "wb") as f:
         f.write(file_content)
