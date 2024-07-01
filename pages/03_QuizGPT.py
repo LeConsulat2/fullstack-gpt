@@ -47,13 +47,13 @@ if not openai_api_key or not alpha_vantage_api_key or not username or not passwo
     st.stop()
 
 
-class JsonOutputParser(BaseOutputParser):
-    def parse(self, text):
-        text = text.replace("```", "").replace("json", "")
-        return json.loads(text)
+#### Lets leave this for now for JsonOutput#####
+# class JsonOutputParser(BaseOutputParser):
+#     def parse(self, text):
+#         text = text.replace("```", "").replace("json", "")
+#         return json.loads(text)
 
-
-output_parser = JsonOutputParser()
+# output_parser = JsonOutputParser()
 
 
 llm = ChatOpenAI(
@@ -308,4 +308,4 @@ else:
                 st.success("Correct!")
             elif value is not None:
                 st.error("Wrong!")
-        button = st.form_submit_button("Submit")
+        button = st.form_submit_button()
