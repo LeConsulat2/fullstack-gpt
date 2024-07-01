@@ -6,7 +6,8 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.callbacks import StreamingStdOutCallbackHandler
 import streamlit as st
 from langchain.retrievers import WikipediaRetriever
-from langchain.schema import BaseOutputParser, output_parser
+
+# from langchain.schema import BaseOutputParser, output_parser
 import os
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
