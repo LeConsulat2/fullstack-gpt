@@ -1,4 +1,3 @@
-import os
 import json
 from langchain.document_loaders import UnstructuredFileLoader
 from langchain.text_splitter import CharacterTextSplitter
@@ -7,39 +6,26 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.callbacks import StreamingStdOutCallbackHandler
 import streamlit as st
 from langchain.retrievers import WikipediaRetriever
-from langchain.schema import BaseOutputParser
-from Dark import set_page_config
-from dotenv import load_dotenv
-from Utils import check_authentication  # Import the utility function
-
-# Ensure the user is authenticated
-check_authentication()
-
-load_dotenv()
-
-openai_api_key = os.getenv("OPENAI_API_KEY")
+from langchain.schema import BaseOutputParser, output_parser
 
 
-class JsonOutParser(BaseOutputParser):
-
+class JsonOutputParser(BaseOutputParser):
     def parse(self, text):
         text = text.replace("```", "").replace("json", "")
         return json.loads(text)
 
 
-output_parser = JsonOutParser()
-
+output_parser = JsonOutputParser()
 
 st.set_page_config(
     page_title="QuizGPT",
     page_icon="❓",
 )
-
 st.title("QuizGPT")
 
 llm = ChatOpenAI(
     temperature=0.1,
-    model="gpt-3.5-turbo",
+    model="gpt-3.5-turbo-0125",
     streaming=True,
     callbacks=[StreamingStdOutCallbackHandler()],
 )
@@ -55,29 +41,29 @@ questions_prompt = ChatPromptTemplate.from_messages(
             "system",
             """
     You are a helpful assistant that is role playing as a teacher.
-
-    Based ONLY on the following context make 10 questions to test the user's knowledge about the text.
-
+         
+    Based ONLY on the following context make 10 (TEN) questions to test the user's knowledge about the text.
+    
     Each question should have 4 answers, three of them must be incorrect and one should be correct.
-
+         
     Use (o) to signal the correct answer.
-
+         
     Question examples:
-
+         
     Question: What is the color of the ocean?
     Answers: Red|Yellow|Green|Blue(o)
-
+         
     Question: What is the capital or Georgia?
     Answers: Baku|Tbilisi(o)|Manila|Beirut
-
+         
     Question: When was Avatar released?
     Answers: 2007|2001|2009(o)|1998
-
+         
     Question: Who was Julius Caesar?
     Answers: A Roman Emperor(o)|Painter|Actor|Model
-
+         
     Your turn!
-
+         
     Context: {context}
 """,
         )
@@ -92,26 +78,26 @@ formatting_prompt = ChatPromptTemplate.from_messages(
             "system",
             """
     You are a powerful formatting algorithm.
-
+     
     You format exam questions into JSON format.
     Answers with (o) are the correct ones.
-
+     
     Example Input:
     Question: What is the color of the ocean?
     Answers: Red|Yellow|Green|Blue(o)
-
+         
     Question: What is the capital or Georgia?
     Answers: Baku|Tbilisi(o)|Manila|Beirut
-
+         
     Question: When was Avatar released?
     Answers: 2007|2001|2009(o)|1998
-
+         
     Question: Who was Julius Caesar?
     Answers: A Roman Emperor(o)|Painter|Actor|Model
-
-
+    
+     
     Example Output:
-
+     
     ```json
     {{ "questions": [
             {{
@@ -135,7 +121,7 @@ formatting_prompt = ChatPromptTemplate.from_messages(
                         }}
                 ]
             }},
-            {{
+                        {{
                 "question": "What is the capital or Georgia?",
                 "answers": [
                         {{
@@ -156,7 +142,7 @@ formatting_prompt = ChatPromptTemplate.from_messages(
                         }}
                 ]
             }},
-            {{
+                        {{
                 "question": "When was Avatar released?",
                 "answers": [
                         {{
@@ -214,13 +200,10 @@ formatting_chain = formatting_prompt | llm
 @st.cache_data(show_spinner="Loading file...")
 def split_file(file):
     file_content = file.read()
-    file_dir = "./.cache/quiz_files/"
-    os.makedirs(file_dir, exist_ok=True)
-    file_path = os.path.join(file_dir, file.name)
+    file_path = f"./.cache/quiz_files/{file.name}"
     with open(file_path, "wb") as f:
         f.write(file_content)
-    # Removed .from_from_huggingface_encoder
-    splitter = CharacterTextSplitter(
+    splitter = CharacterTextSplitter.from_tiktoken_encoder(
         separator="\n",
         chunk_size=600,
         chunk_overlap=100,
@@ -231,8 +214,7 @@ def split_file(file):
 
 
 @st.cache_data(show_spinner="Making quiz...")
-def run_quiz_chain(_docs, topic):  # Changed 'docs' to '_docs' to avoid hashing error
-    context = format_docs(_docs)  # Updated variable name from docs to _docs
+def run_quiz_chain(_docs, topic):
     chain = {"context": questions_chain} | formatting_chain | output_parser
     return chain.invoke(_docs)
 
@@ -266,20 +248,20 @@ with st.sidebar:
         if topic:
             docs = wiki_search(topic)
 
-
 if not docs:
     st.markdown(
         """
     Welcome to QuizGPT.
-
+                
     I will make a quiz from Wikipedia articles or files you upload to test your knowledge and help you study.
-
+                
     Get started by uploading a file or searching on Wikipedia in the sidebar.
     """
     )
 else:
     response = run_quiz_chain(docs, topic if topic else file.name)
     with st.form("questions_form"):
+        st.write(response)
         for question in response["questions"]:
             st.write(question["question"])
             value = st.radio(
