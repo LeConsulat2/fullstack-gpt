@@ -6,8 +6,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.callbacks import StreamingStdOutCallbackHandler
 import streamlit as st
 from langchain.retrievers import WikipediaRetriever
-
-# from langchain.schema import BaseOutputParser, output_parser
+from langchain.schema import BaseOutputParser, output_parser
 import os
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
@@ -48,13 +47,13 @@ if not openai_api_key or not alpha_vantage_api_key or not username or not passwo
     st.stop()
 
 
-#### Lets leave this for now for JsonOutput#####
-# class JsonOutputParser(BaseOutputParser):
-#     def parse(self, text):
-#         text = text.replace("```", "").replace("json", "")
-#         return json.loads(text)
+class JsonOutputParser(BaseOutputParser):
+    def parse(self, text):
+        text = text.replace("```", "").replace("json", "")
+        return json.loads(text)
 
-# output_parser = JsonOutputParser()
+
+output_parser = JsonOutputParser()
 
 
 llm = ChatOpenAI(
@@ -251,7 +250,7 @@ def split_file(file):
 
 @st.cache_data(show_spinner="Making quiz...")
 def run_quiz_chain(_docs, topic):
-    chain = {"context": questions_chain} | formatting_chain  # | output_parser
+    chain = {"context": questions_chain} | formatting_chain | output_parser
     return chain.invoke(_docs)
 
 
@@ -296,17 +295,21 @@ if not docs:
     )
 else:
     response = run_quiz_chain(docs, topic if topic else file.name)
-    with st.form("questions_form"):
-        st.write(response)
-        for question in response["questions"]:
-            st.write(question["question"])
-            value = st.radio(
-                "Select an option.",
-                [answer["answer"] for answer in question["answers"]],
-                index=None,
-            )
-            if {"answer": value, "correct": True} in question["answers"]:
-                st.success("Correct!")
-            elif value is not None:
-                st.error("Wrong!")
-        button = st.form_submit_button("Submit")
+    try:
+        # ## Use the parsed response directly ##
+        parsed_response = response
+        with st.form("questions_form"):
+            for question in parsed_response["questions"]:
+                st.write(question["question"])
+                value = st.radio(
+                    "Select an option.",
+                    [answer["answer"] for answer in question["answers"]],
+                    index=None,
+                )
+                if {"answer": value, "correct": True} in question["answers"]:
+                    st.success("Correct!")
+                elif value is not None:
+                    st.error("Wrong!")
+            button = st.form_submit_button("Submit")
+    except json.JSONDecodeError:
+        st.error("Failed to parse the quiz questions. Please try again.")
