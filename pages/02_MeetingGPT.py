@@ -1,20 +1,20 @@
 import streamlit as st
-import subprocess
-import math
-import glob
-import openai
 import os
+import math
+import subprocess
+import openai
+import glob
+import ffmpeg
 from pydub import AudioSegment
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
-from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 
-
+# Ensure `set_page_config()` is the first Streamlit command
 st.set_page_config(
     page_title="MeetingGPT",
     page_icon="📃",
@@ -37,13 +37,44 @@ alpha_vantage_api_key = (
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
 
+# Set the PATH environment variable from secrets
+if "environment" in st.secrets:
+    os.environ["PATH"] = st.secrets["environment"]["PATH"]
+
+# Display the full PATH environment variable
+st.write("Full PATH environment variable:")
+st.write(os.environ["PATH"])
+
+
+def check_ffmpeg_installed():
+    try:
+        # Check if FFmpeg is accessible
+        result = subprocess.run(
+            ["ffmpeg", "-version"], check=True, capture_output=True, text=True
+        )
+        st.write("FFmpeg version output:")
+        st.write(result.stdout)
+        return True
+    except subprocess.CalledProcessError as e:
+        st.error(f"FFmpeg Error: {e.stderr}")
+    except FileNotFoundError:
+        st.error("FFmpeg not found.")
+    return False
+
+
+if not check_ffmpeg_installed():
+    st.error("FFmpeg is not installed. Please ensure FFmpeg is in the PATH.")
+
 st.title("MeetingGPT")
+
 st.markdown(
     """
     ## Welcome to MeetingGPT
+
     Experience seamless transcription and summary of your meetings with MeetingGPT. 
     
     Upload your video, and we'll provide a detailed transcript, a concise summary, and a chatbot to assist with any queries you might have.
+
     Get started by uploading a video file via the sidebar.
     """
 )
@@ -53,36 +84,6 @@ llm = ChatOpenAI(
     model="gpt-3.5-turbo-0125",
     openai_api_key=openai_api_key,  # Pass the API key here directly
 )
-
-
-def check_ffmpeg_installed():
-    try:
-        # Explicitly set the PATH environment variable
-        os.environ["PATH"] = os.environ["PATH"] + ";C:\\ProgramData\\chocolatey\\bin"
-
-        # Log the full PATH environment variable
-        st.write("Full PATH environment variable:")
-        st.write(os.environ["PATH"])
-
-        # Check if FFmpeg is available
-        ffmpeg_path = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"
-        if not os.path.isfile(ffmpeg_path):
-            st.error(f"FFmpeg not found at {ffmpeg_path}.")
-            return False
-
-        # Check if FFmpeg is accessible
-        result = subprocess.run(
-            [ffmpeg_path, "-version"], check=True, capture_output=True, text=True
-        )
-        st.write("FFmpeg version output:")
-        st.write(result.stdout)
-
-        return True
-    except subprocess.CalledProcessError as e:
-        st.error(f"FFmpeg Error: {e.stderr}")
-    except FileNotFoundError:
-        st.error("FFmpeg not found in PATH.")
-    return False
 
 
 @st.cache_data()  # 폴더 내 모든 청크를 텍스트로 변환
@@ -108,22 +109,11 @@ def extract_audio_from_video(video_path):
         .replace("mkv", "mp3")
         .replace("mov", "mp3")
     )
-    ffmpeg_path = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"
-    command = [
-        ffmpeg_path,
-        "-y",
-        "-i",
-        video_path,
-        "-vn",
-        audio_path,
-    ]
     try:
-        subprocess.run(command, check=True)
+        ffmpeg.input(video_path).output(audio_path, vn=None).run()
         return audio_path
-    except subprocess.CalledProcessError as e:
+    except ffmpeg.Error as e:
         st.error(f"FFmpeg Error: {e.stderr}")
-    except FileNotFoundError as e:
-        st.error("FFmpeg not found. Please ensure it is installed and in your PATH.")
     return None
 
 
@@ -146,23 +136,25 @@ with st.sidebar:
         "Upload Video",
         type=["mp4", "avi", "mkv", "mov"],
     )
-
 if video:
     # Ensure the .cache directory exists
     cache_dir = "./.cache"
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
+
     video_path = os.path.join(cache_dir, video.name)
     chunks_folder = os.path.join(cache_dir, f"chunks_{os.path.splitext(video.name)[0]}")
     transcription_path = os.path.join(
         cache_dir, f"{os.path.splitext(video.name)[0]}.txt"
     )
+
     if not os.path.exists(transcription_path):
         with st.status("Loading video...") as status:
             video_content = video.read()
             # Save the uploaded video to a temporary location
             with open(video_path, "wb") as f:
                 f.write(video_content)
+
             if not check_ffmpeg_installed():
                 st.error("FFmpeg is not installed. Please install FFmpeg to proceed.")
             else:
@@ -191,6 +183,7 @@ if video:
 
     with summary_tab:
         start = st.button("Generate summary")
+
         if start:
             loader = TextLoader(transcription_path)
             splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
@@ -198,17 +191,21 @@ if video:
                 chunk_overlap=100,
             )
             docs = loader.load_and_split(text_splitter=splitter)
+
             first_summary_prompt = ChatPromptTemplate.from_template(
                 """
                 Write a concise summary of the following:
                 "{text}"
                 CONCISE SUMMARY:                
-                """
+            """
             )
+
             first_summary_chain = first_summary_prompt | llm | StrOutputParser()
+
             summary = first_summary_chain.invoke(
                 {"text": docs[0].page_content},
             )
+
             refine_prompt = ChatPromptTemplate.from_template(
                 """
                 Your job is to produce a final summary.
@@ -221,7 +218,9 @@ if video:
                 If the context isn't useful, RETURN the original summary.
                 """
             )
+
             refine_chain = refine_prompt | llm | StrOutputParser()
+
             with st.status("Summarizing...") as status:
                 for i, doc in enumerate(docs[1:]):
                     status.update(label=f"Processing document {i+1}/{len(docs)-1} ")
