@@ -1,9 +1,9 @@
-import streamlit as st
 import os
-import math
+import streamlit as st
 import subprocess
-import openai
+import math
 import glob
+import openai
 import ffmpeg
 from pydub import AudioSegment
 from langchain.chat_models import ChatOpenAI
@@ -41,16 +41,25 @@ password = os.getenv("password") or st.secrets["credentials"]["password"]
 if "environment" in st.secrets:
     os.environ["PATH"] = st.secrets["environment"]["PATH"]
 
+# Add the specific FFmpeg path to the PATH environment variable
+ffmpeg_path = "/app/bin/ffmpeg"  # Adjust based on your project structure
+if ffmpeg_path not in os.environ["PATH"]:
+    os.environ["PATH"] = ffmpeg_path + os.pathsep + os.environ["PATH"]
+
 # Display the full PATH environment variable
 st.write("Full PATH environment variable:")
 st.write(os.environ["PATH"])
 
 
+# Function to check if FFmpeg is installed
 def check_ffmpeg_installed():
     try:
-        # Check if FFmpeg is accessible
+        ffmpeg_exec_path = os.path.join(ffmpeg_path, "ffmpeg")
+        if not os.path.isfile(ffmpeg_exec_path):
+            st.error(f"FFmpeg executable not found at {ffmpeg_exec_path}")
+            return False
         result = subprocess.run(
-            ["ffmpeg", "-version"], check=True, capture_output=True, text=True
+            [ffmpeg_exec_path, "-version"], check=True, capture_output=True, text=True
         )
         st.write("FFmpeg version output:")
         st.write(result.stdout)
