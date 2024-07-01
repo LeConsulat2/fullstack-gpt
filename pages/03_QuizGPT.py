@@ -7,6 +7,43 @@ from langchain.callbacks import StreamingStdOutCallbackHandler
 import streamlit as st
 from langchain.retrievers import WikipediaRetriever
 from langchain.schema import BaseOutputParser, output_parser
+import os
+from dotenv import load_dotenv
+from Utils import check_authentication  # Import the utility function
+
+st.set_page_config(
+    page_title="QuizGPT",
+    page_icon="❓",
+)
+st.title("QuizGPT")
+
+
+# Ensure the user is authenticated
+check_authentication()
+
+# Load environment variables from .env file for local development
+load_dotenv()
+
+# Access secrets in Streamlit Cloud or locally from environment variables
+openai_api_key = (
+    os.getenv("OPENAI_API_KEY") or st.secrets["credentials"]["OPENAI_API_KEY"]
+)
+alpha_vantage_api_key = (
+    os.getenv("ALPHA_VANTAGE_API_KEY")
+    or st.secrets["credentials"]["ALPHA_VANTAGE_API_KEY"]
+)
+username = os.getenv("username") or st.secrets["credentials"]["username"]
+password = os.getenv("password") or st.secrets["credentials"]["password"]
+
+# Log the API key for debugging (remove this after debugging)
+# st.write(f"OpenAI API Key: {openai_api_key}")
+# st.write(f"Alpha Vantage API Key: {alpha_vantage_api_key}")
+# st.write(f"Username: {username}")
+# st.write(f"Password: {password}")
+
+if not openai_api_key or not alpha_vantage_api_key or not username or not password:
+    st.error("Some required environment variables are missing.")
+    st.stop()
 
 
 class JsonOutputParser(BaseOutputParser):
@@ -17,11 +54,6 @@ class JsonOutputParser(BaseOutputParser):
 
 output_parser = JsonOutputParser()
 
-st.set_page_config(
-    page_title="QuizGPT",
-    page_icon="❓",
-)
-st.title("QuizGPT")
 
 llm = ChatOpenAI(
     temperature=0.1,
