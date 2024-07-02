@@ -144,6 +144,8 @@ if video:
     if not os.path.exists(transcription_path):
         with st.status("Loading video...") as status:
             video_content = video.read()
+            # Ensure the directories exist
+            os.makedirs("./.cache/meeting_files/", exist_ok=True)
             with open(video_path, "wb") as f:
                 f.write(video_content)
                 status.update(label="Extracting audio...")
