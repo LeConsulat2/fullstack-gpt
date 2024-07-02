@@ -114,9 +114,8 @@ def embed_file(file):
     # st.write(
     #     "Embedding API Key (within embed_file):", openai_api_key=openai_api_key
     # )   Log the API key
-    embeddings = OllamaEmbeddings(
-        openai_api_key=openai_api_key
-    )  # Pass the API key here
+    embeddings = OllamaEmbeddings()
+
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
 
     # Create a FAISS retriever
