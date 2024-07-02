@@ -9,6 +9,7 @@ from langchain.vectorstores.faiss import FAISS
 from langchain.chat_models import ChatOllama
 from langchain.callbacks.base import BaseCallbackHandler
 import os
+from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 
