@@ -1,12 +1,12 @@
 import streamlit as st
 from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import UnstructuredFileLoader
-from langchain.embeddings import CacheBackedEmbeddings, OllamaEmbeddings
+from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
 from langchain.schema.runnable import RunnableLambda, RunnablePassthrough
 from langchain.storage import LocalFileStore
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
-from langchain.chat_models import ChatOllama
+from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import BaseCallbackHandler
 import os
 from Dark import set_page_config
@@ -65,8 +65,8 @@ class ChatCallBackHandler(BaseCallbackHandler):
 # Log the exact usage of the API key
 # st.write("Initializing ChatOpenAI with the provided API key...")
 try:
-    llm = ChatOllama(
-        model="mistral:latest",
+    llm = ChatOpenAI(
+        model="gpt-3.5-turbo",
         temperature=0.1,
         streaming=True,
         callbacks=[
@@ -115,7 +115,7 @@ def embed_file(file):
     # st.write(
     #     "Embedding API Key (within embed_file):", openai_api_key=openai_api_key
     # )   Log the API key
-    embeddings = OllamaEmbeddings()
+    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
 
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
 
