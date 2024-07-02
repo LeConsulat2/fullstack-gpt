@@ -11,6 +11,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
+from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 
@@ -163,6 +164,9 @@ if video:
             # Save the uploaded video to a temporary location
             with open(video_path, "wb") as f:
                 f.write(video_content)
+                # if not check_ffmpeg_installed():
+                #     st.error("FFmpeg is not installed. Please install FFmpeg to proceed.")
+                # else:
                 status.update(label="Extracting audio...")
                 audio_path = extract_audio_from_video(video_path)
                 if audio_path:
