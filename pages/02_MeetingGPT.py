@@ -11,23 +11,17 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
-from Dark import set_page_config
 from dotenv import load_dotenv
-from Utils import check_authentication  # Import the utility function
+from Utils import check_authentication
 
-# Ensure `set_page_config()` is the first Streamlit command
 st.set_page_config(
     page_title="MeetingGPT",
     page_icon="📃",
 )
 
-# Ensure the user is authenticated
 check_authentication()
-
-# Load environment variables from .env file for local development
 load_dotenv()
 
-# Access secrets in Streamlit Cloud or locally from environment variables
 openai_api_key = (
     os.getenv("OPENAI_API_KEY") or st.secrets["credentials"]["OPENAI_API_KEY"]
 )
@@ -37,43 +31,6 @@ alpha_vantage_api_key = (
 )
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
-
-# Set the PATH environment variable from secrets
-if "environment" in st.secrets:
-    os.environ["PATH"] = st.secrets["environment"]["PATH"]
-
-# Add the specific FFmpeg path to the PATH environment variable
-# ffmpeg_path = "/app/bin/ffmpeg"  # Adjust based on your project structure
-# if ffmpeg_path not in os.environ["PATH"]:
-#     os.environ["PATH"] = ffmpeg_path + os.pathsep + os.environ["PATH"]
-
-# Display the full PATH environment variable
-# st.write("Full PATH environment variable:")
-# st.write(os.environ["PATH"])
-
-
-# Function to check if FFmpeg is installed
-# def check_ffmpeg_installed():
-#     try:
-#         ffmpeg_exec_path = os.path.join(ffmpeg_path, "ffmpeg")
-#         if not os.path.isfile(ffmpeg_exec_path):
-#             st.error(f"FFmpeg executable not found at {ffmpeg_exec_path}")
-#             return False
-#         result = subprocess.run(
-#             [ffmpeg_exec_path, "-version"], check=True, capture_output=True, text=True
-#         )
-#         st.write("FFmpeg version output:")
-#         st.write(result.stdout)
-#         return True
-#     except subprocess.CalledProcessError as e:
-#         st.error(f"FFmpeg Error: {e.stderr}")
-#     except FileNotFoundError:
-#         st.error("FFmpeg not found.")
-#     return False
-
-
-# if not check_ffmpeg_installed():
-#     st.error("FFmpeg is not installed. Please ensure FFmpeg is in the PATH.")
 
 st.title("MeetingGPT")
 
@@ -92,11 +49,11 @@ st.markdown(
 llm = ChatOpenAI(
     temperature=0.1,
     model="gpt-3.5-turbo-0125",
-    openai_api_key=openai_api_key,  # Pass the API key here directly
+    openai_api_key=openai_api_key,
 )
 
 
-@st.cache_data()  # 폴더 내 모든 청크를 텍스트로 변환
+@st.cache_data()
 def transcribe_chunks(chunk_folder, destination):
     files = glob.glob(f"{chunk_folder}/*.mp3")
     files.sort()
@@ -127,14 +84,14 @@ def extract_audio_from_video(video_path):
     return None
 
 
-@st.cache_data()  # 오디오 파일을 청크로 나누기
+@st.cache_data()
 def cut_audio_in_chunks(audio_path, chunk_size, chunks_folder):
-    track = AudioSegment.from_mp3(audio_path)  # 오디오 파일 로드
-    chunk_length = chunk_size * 60 * 1000  # 청크 크기를 밀리초로 변환
+    track = AudioSegment.from_mp3(audio_path)
+    chunk_length = chunk_size * 60 * 1000
     chunks = math.ceil(len(track) / chunk_length)
-    if not os.path.exists(chunks_folder):  # 청크 폴더가 존재하지 않으면 생성
+    if not os.path.exists(chunks_folder):
         os.makedirs(chunks_folder)
-    for i in range(chunks):  # 각 청크를 개별 파일로 내보내기
+    for i in range(chunks):
         start_time = i * chunk_length
         end_time = (i + 1) * chunk_length
         chunk = track[start_time:end_time]
@@ -147,7 +104,6 @@ with st.sidebar:
         type=["mp4", "avi", "mkv", "mov"],
     )
 if video:
-    # Ensure the .cache directory exists
     cache_dir = "./.cache"
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
@@ -161,12 +117,8 @@ if video:
     if not os.path.exists(transcription_path):
         with st.status("Loading video...") as status:
             video_content = video.read()
-            # Save the uploaded video to a temporary location
             with open(video_path, "wb") as f:
                 f.write(video_content)
-                # if not check_ffmpeg_installed():
-                #     st.error("FFmpeg is not installed. Please install FFmpeg to proceed.")
-                # else:
                 status.update(label="Extracting audio...")
                 audio_path = extract_audio_from_video(video_path)
                 if audio_path:
