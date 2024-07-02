@@ -89,6 +89,20 @@ def extract_audio_from_video(video_path):
 
 
 @st.cache_data()
+def extract_audio_from_video(video_path):
+    audio_path = video_path.replace("mp4", "mp3")
+    command = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        video_path,
+        "-vn",
+        audio_path,
+    ]
+    subprocess.run(command)
+
+
+@st.cache_data()
 def cut_audio_in_chunks(audio_path, chunk_size, chunks_folder):
     track = AudioSegment.from_mp3(audio_path)
     chunk_length = chunk_size * 60 * 1000
