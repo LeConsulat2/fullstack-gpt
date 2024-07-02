@@ -154,7 +154,7 @@ def format_docs(docs):
 
 prompt = ChatPromptTemplate.from_template(
     """
-    Answer the question using ONLY the following context and not your training data. If you don't know the answer just say you don't know. Don't make anything up.
+    Answer the question using ONLY the following context and not your training data. Understand the context and provide the answer. If you don't know the answer just say you don't know. Don't make anything up.
 
     Context: {context}
     Questions:{question}
