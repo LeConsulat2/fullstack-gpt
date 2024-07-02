@@ -47,32 +47,32 @@ if ffmpeg_path not in os.environ["PATH"]:
     os.environ["PATH"] = ffmpeg_path + os.pathsep + os.environ["PATH"]
 
 # Display the full PATH environment variable
-st.write("Full PATH environment variable:")
-st.write(os.environ["PATH"])
+# st.write("Full PATH environment variable:")
+# st.write(os.environ["PATH"])
 
 
 # Function to check if FFmpeg is installed
-def check_ffmpeg_installed():
-    try:
-        ffmpeg_exec_path = os.path.join(ffmpeg_path, "ffmpeg")
-        if not os.path.isfile(ffmpeg_exec_path):
-            st.error(f"FFmpeg executable not found at {ffmpeg_exec_path}")
-            return False
-        result = subprocess.run(
-            [ffmpeg_exec_path, "-version"], check=True, capture_output=True, text=True
-        )
-        st.write("FFmpeg version output:")
-        st.write(result.stdout)
-        return True
-    except subprocess.CalledProcessError as e:
-        st.error(f"FFmpeg Error: {e.stderr}")
-    except FileNotFoundError:
-        st.error("FFmpeg not found.")
-    return False
+# def check_ffmpeg_installed():
+#     try:
+#         ffmpeg_exec_path = os.path.join(ffmpeg_path, "ffmpeg")
+#         if not os.path.isfile(ffmpeg_exec_path):
+#             st.error(f"FFmpeg executable not found at {ffmpeg_exec_path}")
+#             return False
+#         result = subprocess.run(
+#             [ffmpeg_exec_path, "-version"], check=True, capture_output=True, text=True
+#         )
+#         st.write("FFmpeg version output:")
+#         st.write(result.stdout)
+#         return True
+#     except subprocess.CalledProcessError as e:
+#         st.error(f"FFmpeg Error: {e.stderr}")
+#     except FileNotFoundError:
+#         st.error("FFmpeg not found.")
+#     return False
 
 
-if not check_ffmpeg_installed():
-    st.error("FFmpeg is not installed. Please ensure FFmpeg is in the PATH.")
+# if not check_ffmpeg_installed():
+#     st.error("FFmpeg is not installed. Please ensure FFmpeg is in the PATH.")
 
 st.title("MeetingGPT")
 
