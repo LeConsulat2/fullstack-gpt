@@ -52,6 +52,8 @@ llm = ChatOpenAI(
     openai_api_key=openai_api_key,
 )
 
+# has_transcript = os.path.exists("./.cache/podcast.txt")
+
 
 @st.cache_data()
 def transcribe_chunks(chunk_folder, destination):
@@ -66,6 +68,22 @@ def transcribe_chunks(chunk_folder, destination):
                 file=audio_file,
             )
             text_file.write(transcription["text"])
+
+
+@st.cache_data()
+def extract_audio_from_video(video_path):
+    # if has_transcript:
+    #     return
+    audio_path = video_path.replace("mp4", "mp3")
+    command = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        video_path,
+        "-vn",
+        audio_path,
+    ]
+    subprocess.run(command)
 
 
 @st.cache_data()
