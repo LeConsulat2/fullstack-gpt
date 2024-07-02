@@ -45,13 +45,13 @@ def home_page():
             """
             - DocumentGPT
                          
-            - MeetingGPT 
+            - Quiz 
+
+            - PrivateGPT
 
             """
         )
-        st.info(
-            "🔨  QuizGPT, PrivateGPT,  InvestorGPT,  SiteGPT still under construction...🔨"
-        )
+        st.info("🔨  Meeting, InvestorGPT,  SiteGPT still under construction...🔨")
 
     if st.button("Logout"):
         st.session_state.authenticated = False
