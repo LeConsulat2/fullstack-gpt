@@ -72,25 +72,14 @@ def transcribe_chunks(chunk_folder, destination):
             text_file.write(transcription["text"])
 
 
-# @st.cache_data()
-# def extract_audio_from_video(video_path):
-#     audio_path = (
-#         video_path.replace("mp4", "mp3")
-#         .replace("avi", "mp3")
-#         .replace("mkv", "mp3")
-#         .replace("mov", "mp3")
-#     )
-#     try:
-#         ffmpeg.input(video_path).output(audio_path, vn=None).run()
-#         return audio_path
-#     except ffmpeg.Error as e:
-#         st.error(f"FFmpeg Error: {e.stderr}")
-#     return None
-
-
 @st.cache_data()
 def extract_audio_from_video(video_path):
-    audio_path = video_path.replace("mp4", "mp3")
+    audio_path = (
+        video_path.replace("mp4", "mp3")
+        .replace("avi", "mp3")
+        .replace("mkv", "mp3")
+        .replace("mov", "mp3")
+    )
     command = [
         "ffmpeg",
         "-y",
@@ -100,6 +89,26 @@ def extract_audio_from_video(video_path):
         audio_path,
     ]
     subprocess.run(command)
+    try:
+        ffmpeg.input(video_path).output(audio_path, vn=None).run()
+        return audio_path
+    except ffmpeg.Error as e:
+        st.error(f"FFmpeg Error: {e.stderr}")
+    return None
+
+
+# @st.cache_data()
+# def extract_audio_from_video(video_path):
+#     audio_path = video_path.replace("mp4", "mp3")
+#     command = [
+#         "ffmpeg",
+#         "-y",
+#         "-i",
+#         video_path,
+#         "-vn",
+#         audio_path,
+#     ]
+#     subprocess.run(command)
 
 
 @st.cache_data()
