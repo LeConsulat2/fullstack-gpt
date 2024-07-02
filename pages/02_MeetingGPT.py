@@ -43,9 +43,9 @@ if "environment" in st.secrets:
     os.environ["PATH"] = st.secrets["environment"]["PATH"]
 
 # Add the specific FFmpeg path to the PATH environment variable
-ffmpeg_path = "/app/bin/ffmpeg"  # Adjust based on your project structure
-if ffmpeg_path not in os.environ["PATH"]:
-    os.environ["PATH"] = ffmpeg_path + os.pathsep + os.environ["PATH"]
+# ffmpeg_path = "/app/bin/ffmpeg"  # Adjust based on your project structure
+# if ffmpeg_path not in os.environ["PATH"]:
+#     os.environ["PATH"] = ffmpeg_path + os.pathsep + os.environ["PATH"]
 
 # Display the full PATH environment variable
 # st.write("Full PATH environment variable:")
