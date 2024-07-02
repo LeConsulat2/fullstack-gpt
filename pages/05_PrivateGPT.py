@@ -65,7 +65,7 @@ class ChatCallBackHandler(BaseCallbackHandler):
 # st.write("Initializing ChatOpenAI with the provided API key...")
 try:
     llm = ChatOllama(
-        model="gpt-3.5-turbo",
+        model="mistral:latest",
         temperature=0.1,
         streaming=True,
         callbacks=[
