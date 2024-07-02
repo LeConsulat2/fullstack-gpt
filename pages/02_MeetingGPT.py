@@ -11,6 +11,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
+from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication
 
@@ -32,6 +33,9 @@ alpha_vantage_api_key = (
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
 
+if "environment" in st.secrets:
+    os.environ["PATH"] = st.secrets["environment"]["PATH"]
+
 st.title("MeetingGPT")
 
 st.markdown(
@@ -52,8 +56,6 @@ llm = ChatOpenAI(
     openai_api_key=openai_api_key,
 )
 
-# has_transcript = os.path.exists("./.cache/podcast.txt")
-
 
 @st.cache_data()
 def transcribe_chunks(chunk_folder, destination):
@@ -68,22 +70,6 @@ def transcribe_chunks(chunk_folder, destination):
                 file=audio_file,
             )
             text_file.write(transcription["text"])
-
-
-@st.cache_data()
-def extract_audio_from_video(video_path):
-    # if has_transcript:
-    #     return
-    audio_path = video_path.replace("mp4", "mp3")
-    command = [
-        "ffmpeg",
-        "-y",
-        "-i",
-        video_path,
-        "-vn",
-        audio_path,
-    ]
-    subprocess.run(command)
 
 
 @st.cache_data()
