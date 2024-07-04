@@ -1,5 +1,6 @@
 # System packages
 ffmpeg
+git
 
 # Python packages
 [python]
