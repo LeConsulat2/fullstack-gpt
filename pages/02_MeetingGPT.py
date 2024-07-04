@@ -72,11 +72,22 @@ def extract_audio_from_video(video_path):
         .replace("mkv", "mp3")
         .replace("mov", "mp3")
     )
+    ffmpeg_path = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"
+    command = [
+        ffmpeg_path,
+        "-y",
+        "-i",
+        video_path,
+        "-vn",
+        audio_path,
+    ]
     try:
-        ffmpeg.input(video_path).output(audio_path, vn=None).run()
+        subprocess.run(command, check=True)
         return audio_path
-    except ffmpeg.Error as e:
+    except subprocess.CalledProcessError as e:
         st.error(f"FFmpeg Error: {e.stderr}")
+    except FileNotFoundError as e:
+        st.error("FFmpeg not found. Please ensure it is installed and in your PATH.")
     return None
 
 
