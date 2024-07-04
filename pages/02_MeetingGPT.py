@@ -1,14 +1,6 @@
 import subprocess
 import sys
 import streamlit as st
-
-# Ensure all required packages are installed
-try:
-    subprocess.run([sys.executable, "ensure_packages.py"], check=True)
-except subprocess.CalledProcessError as e:
-    st.error(f"An error occurred while ensuring packages: {e}")
-    sys.exit(1)
-
 import os
 import math
 import glob
@@ -22,6 +14,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
 from dotenv import load_dotenv
 from Utils import check_authentication
+from Ensure import main
 
 st.set_page_config(
     page_title="MeetingGPT",
@@ -40,6 +33,8 @@ alpha_vantage_api_key = (
 )
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
+
+main()
 
 st.title("MeetingGPT")
 st.markdown(
