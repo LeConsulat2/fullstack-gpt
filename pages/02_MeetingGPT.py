@@ -164,43 +164,49 @@ if video:
             )
             docs = loader.load_and_split(text_splitter=splitter)
 
-            first_summary_prompt = ChatPromptTemplate.from_template(
+            # Check if docs list is not empty
+            if docs:
+                first_summary_prompt = ChatPromptTemplate.from_template(
+                    """
+                    Write a concise summary of the following:
+                    "{text}"
+                    CONCISE SUMMARY:                
                 """
-                Write a concise summary of the following:
-                "{text}"
-                CONCISE SUMMARY:                
-            """
-            )
+                )
 
-            first_summary_chain = first_summary_prompt | llm | StrOutputParser()
+                first_summary_chain = first_summary_prompt | llm | StrOutputParser()
 
-            summary = first_summary_chain.invoke(
-                {"text": docs[0].page_content},
-            )
+                summary = first_summary_chain.invoke(
+                    {"text": docs[0].page_content},
+                )
 
-            refine_prompt = ChatPromptTemplate.from_template(
-                """
-                Your job is to produce a final summary.
-                We have provided an existing summary up to a certain point: {existing_summary}
-                We have the opportunity to refine the existing summary (only if needed) with some more context below.
-                ------------
-                {context}
-                ------------
-                Given the new context, refine the original summary.
-                If the context isn't useful, RETURN the original summary.
-                """
-            )
+                refine_prompt = ChatPromptTemplate.from_template(
+                    """
+                    Your job is to produce a final summary.
+                    We have provided an existing summary up to a certain point: {existing_summary}
+                    We have the opportunity to refine the existing summary (only if needed) with some more context below.
+                    ------------
+                    {context}
+                    ------------
+                    Given the new context, refine the original summary.
+                    If the context isn't useful, RETURN the original summary.
+                    """
+                )
 
-            refine_chain = refine_prompt | llm | StrOutputParser()
+                refine_chain = refine_prompt | llm | StrOutputParser()
 
-            with st.spinner("Summarizing..."):
-                for i, doc in enumerate(docs[1:]):
-                    st.info(f"Processing document {i+1}/{len(docs)-1}")
-                    summary = refine_chain.invoke(
-                        {
-                            "existing_summary": summary,
-                            "context": doc.page_content,
-                        }
-                    )
-                    st.write(summary)
-            st.write(summary)
+                with st.spinner("Summarizing..."):
+                    for i, doc in enumerate(docs[1:]):
+                        st.info(f"Processing document {i+1}/{len(docs)-1}")
+                        summary = refine_chain.invoke(
+                            {
+                                "existing_summary": summary,
+                                "context": doc.page_content,
+                            }
+                        )
+                        st.write(summary)
+                st.write(summary)
+            else:
+                st.write(
+                    "No documents found for summarization. Please check the transcription file."
+                )
