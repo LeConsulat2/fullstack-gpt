@@ -5,6 +5,11 @@ import math
 import glob
 import openai
 import ffmpeg
+import sys
+
+# Append root folder to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from Ensure import main
 from Dark import set_page_config
 from pydub import AudioSegment
@@ -114,16 +119,16 @@ if video:
     )
 
     if not os.path.exists(transcription_path):
-        with st.status("Loading video...") as status:
+        with st.spinner("Loading video...") as status:
             video_content = video.read()
             with open(video_path, "wb") as f:
                 f.write(video_content)
-                status.update(label="Extracting audio...")
+                st.info("Extracting audio...")
                 audio_path = extract_audio_from_video(video_path)
                 if audio_path:
-                    status.update(label="Cutting audio segments...")
+                    st.info("Cutting audio segments...")
                     cut_audio_in_chunks(audio_path, 10, chunks_folder)
-                    status.update(label="Transcribing audio...")
+                    st.info("Transcribing audio...")
                     transcribe_chunks(chunks_folder, transcription_path)
 
     transcription_tab, summary_tab, qa_tab = st.tabs(
@@ -177,9 +182,9 @@ if video:
                 """
             )
             refine_chain = refine_prompt | llm | StrOutputParser()
-            with st.status("Summarizing...") as status:
+            with st.spinner("Summarizing..."):
                 for i, doc in enumerate(docs[1:]):
-                    status.update(label=f"Processing document {i+1}/{len(docs)-1} ")
+                    st.info(f"Processing document {i+1}/{len(docs)-1} ")
                     summary = refine_chain.invoke(
                         {
                             "existing_summary": summary,
