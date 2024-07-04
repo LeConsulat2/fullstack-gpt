@@ -1,11 +1,24 @@
-import subprocess
+import os
 import sys
 import streamlit as st
-import os
+
+# Add the root directory to the system path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+# Import and call the ensure_packages function
+import Ensure
+
+try:
+    Ensure.main()
+except Exception as e:
+    st.error(f"An error occurred while ensuring packages: {e}")
+    sys.exit(1)
+
+# Rest of your Streamlit code
+import subprocess
 import math
 import glob
 import openai
-from Dark import set_page_config
 from pydub import AudioSegment
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
@@ -14,7 +27,6 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
 from dotenv import load_dotenv
 from Utils import check_authentication
-from Ensure import main
 
 st.set_page_config(
     page_title="MeetingGPT",
@@ -33,8 +45,6 @@ alpha_vantage_api_key = (
 )
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
-
-main()
 
 st.title("MeetingGPT")
 st.markdown(
