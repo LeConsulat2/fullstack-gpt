@@ -1,24 +1,12 @@
 import os
-import sys
 import streamlit as st
-
-# Add the root directory to the system path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-# Import and call the ensure_packages function
-import Ensure
-
-try:
-    Ensure.main()
-except Exception as e:
-    st.error(f"An error occurred while ensuring packages: {e}")
-    sys.exit(1)
-
-# Rest of your Streamlit code
 import subprocess
 import math
 import glob
 import openai
+import ffmpeg
+from Ensure import main
+from Dark import set_page_config
 from pydub import AudioSegment
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
@@ -35,7 +23,6 @@ st.set_page_config(
 
 check_authentication()
 load_dotenv()
-
 openai_api_key = (
     os.getenv("OPENAI_API_KEY") or st.secrets["credentials"]["OPENAI_API_KEY"]
 )
@@ -45,6 +32,8 @@ alpha_vantage_api_key = (
 )
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
+
+main()
 
 st.title("MeetingGPT")
 st.markdown(
@@ -87,15 +76,10 @@ def extract_audio_from_video(video_path):
         .replace("mov", "mp3")
     )
     try:
-        result = subprocess.run(
-            ["ffmpeg", "-i", video_path, audio_path],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        ffmpeg.input(video_path).output(audio_path, vn=None).run()
         return audio_path
-    except subprocess.CalledProcessError as e:
-        st.error(f"FFmpeg Error: {e.stderr.decode('utf-8')}")
+    except ffmpeg.Error as e:
+        st.error(f"FFmpeg Error: {e.stderr}")
     return None
 
 
