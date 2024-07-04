@@ -1,10 +1,3 @@
-# System packages
 ffmpeg
-git
 
-# Python packages
-[python]
-openai
-streamlit
-pydub
-langchain
+
