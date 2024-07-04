@@ -5,6 +5,7 @@ import math
 import glob
 import openai
 import ffmpeg
+from Dark import set_page_config
 from pydub import AudioSegment
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
@@ -21,6 +22,7 @@ st.set_page_config(
 
 check_authentication()
 load_dotenv()
+
 openai_api_key = (
     os.getenv("OPENAI_API_KEY") or st.secrets["credentials"]["OPENAI_API_KEY"]
 )
