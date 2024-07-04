@@ -13,8 +13,54 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
 from langchain.vectorstores.faiss import FAISS
 from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
+from Dark import set_page_config
+from dotenv import load_dotenv
+from Utils import check_authentication  # Import the utility function
 
-llm = ChatOpenAI(temperature=0.1)
+st.set_page_config(
+    page_title="MeetingGPT",
+    page_icon="💼",
+)
+
+# Ensure the user is authenticated
+check_authentication()
+
+# Load environment variables from .env file for local development
+load_dotenv()
+
+# Access secrets in Streamlit Cloud or locally from environment variables
+openai_api_key = (
+    os.getenv("OPENAI_API_KEY") or st.secrets["credentials"]["OPENAI_API_KEY"]
+)
+alpha_vantage_api_key = (
+    os.getenv("ALPHA_VANTAGE_API_KEY")
+    or st.secrets["credentials"]["ALPHA_VANTAGE_API_KEY"]
+)
+username = os.getenv("username") or st.secrets["credentials"]["username"]
+password = os.getenv("password") or st.secrets["credentials"]["password"]
+
+# Log the API key for debugging (remove this after debugging)
+# st.write(f"OpenAI API Key: {openai_api_key}")
+# st.write(f"Alpha Vantage API Key: {alpha_vantage_api_key}")
+# st.write(f"Username: {username}")
+# st.write(f"Password: {password}")
+
+if not openai_api_key or not alpha_vantage_api_key or not username or not password:
+    st.error("Some required environment variables are missing.")
+    st.stop()
+
+try:
+    llm = ChatOpenAI(
+        model="gpt-3.5-turbo",
+        temperature=0.1,
+        streaming=True,
+        openai_api_key=openai_api_key,  # Pass the API key here
+    )
+    # st.write("ChatOpenAI initialized successfully.")
+except Exception as e:
+    st.error(f"Failed to initialize ChatOpenAI: {e}")
+    st.stop()
+
 
 has_transcript = os.path.exists("./.cache/podcast.txt")
 
@@ -88,10 +134,6 @@ def cut_audio_in_chunks(audio_path, chunk_size, chunks_folder):
         )
 
 
-st.set_page_config(
-    page_title="MeetingGPT",
-    page_icon="💼",
-)
 st.markdown(
     """
 # MeetingGPT
