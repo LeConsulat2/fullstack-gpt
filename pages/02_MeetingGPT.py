@@ -115,7 +115,7 @@ if video:
     chunks_folder = f"./.cache/chunks_{os.path.splitext(video.name)[0]}"
     transcription_path = f"./.cache/{os.path.splitext(video.name)[0]}.txt"
     if not os.path.exists(transcription_path):
-        with st.status("Loading video...") as status:
+        with st.spinner("Processing..."):
             video_content = video.read()
             # Save the uploaded video to a temporary location
             video_path = f"./.cache/{video.name}"
@@ -127,11 +127,11 @@ if video:
             )
             with open(video_path, "wb") as f:
                 f.write(video_content)
-            status.update(label="Extracting audio...")
+            st.info("Extracting audio...")
             extract_audio_from_video(video_path)
-            status.update(label="Cutting audio segments...")
+            st.info("Cutting audio segments...")
             cut_audio_in_chunks(audio_path, 10, chunks_folder)
-            status.update(label="Transcribing audio...")
+            st.info("Transcribing audio...")
             transcribe_chunks(chunks_folder, transcription_path)
 
     transcription_tab, summary_tab, qa_tab = st.tabs(
@@ -189,9 +189,9 @@ if video:
 
             refine_chain = refine_prompt | llm | StrOutputParser()
 
-            with st.status("Summarizing...") as status:
+            with st.spinner("Summarizing..."):
                 for i, doc in enumerate(docs[1:]):
-                    status.update(label=f"Processing document {i+1}/{len(docs)-1} ")
+                    st.info(f"Processing document {i+1}/{len(docs)-1}")
                     summary = refine_chain.invoke(
                         {
                             "existing_summary": summary,
