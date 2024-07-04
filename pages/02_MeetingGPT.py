@@ -1,155 +1,143 @@
-import os
+from langchain.storage import LocalFileStore
 import streamlit as st
 import subprocess
 import math
+from pydub import AudioSegment
 import glob
 import openai
-import ffmpeg
-from Dark import set_page_config
-from pydub import AudioSegment
+import os
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
-from dotenv import load_dotenv
-from Utils import check_authentication
+from langchain.vectorstores.faiss import FAISS
+from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
 
-st.set_page_config(
-    page_title="MeetingGPT",
-    page_icon="📃",
-)
+llm = ChatOpenAI(temperature=0.1)
 
-check_authentication()
-load_dotenv()
-openai_api_key = (
-    os.getenv("OPENAI_API_KEY") or st.secrets["credentials"]["OPENAI_API_KEY"]
-)
-alpha_vantage_api_key = (
-    os.getenv("ALPHA_VANTAGE_API_KEY")
-    or st.secrets["credentials"]["ALPHA_VANTAGE_API_KEY"]
-)
-username = os.getenv("username") or st.secrets["credentials"]["username"]
-password = os.getenv("password") or st.secrets["credentials"]["password"]
+has_transcript = os.path.exists("./.cache/podcast.txt")
 
-st.title("MeetingGPT")
-st.markdown(
-    """
-    ## Welcome to MeetingGPT
-    Experience seamless transcription and summary of your meetings with MeetingGPT.
-    Upload your video, and we'll provide a detailed transcript, a concise summary, and a chatbot to assist with any queries you might have.
-    Get started by uploading a video file via the sidebar.
-    """
+splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+    chunk_size=800,
+    chunk_overlap=100,
 )
 
-llm = ChatOpenAI(
-    temperature=0.1,
-    model="gpt-3.5-turbo-0125",
-    openai_api_key=openai_api_key,
-)
+
+@st.cache_data()
+def embed_file(file_path):
+    cache_dir = LocalFileStore(f"./.cache/embeddings/{file.name}")
+    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        chunk_size=800,
+        chunk_overlap=100,
+    )
+    loader = TextLoader(file_path)
+    docs = loader.load_and_split(text_splitter=splitter)
+    embeddings = OpenAIEmbeddings()
+    cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
+    vectorstore = FAISS.from_documents(docs, cached_embeddings)
+    retriever = vectorstore.as_retriever()
+    return retriever
 
 
 @st.cache_data()
 def transcribe_chunks(chunk_folder, destination):
+    if has_transcript:
+        return
     files = glob.glob(f"{chunk_folder}/*.mp3")
     files.sort()
     for file in files:
-        with open(file, "rb") as audio_file, open(
-            destination, "a", encoding="utf-8"
-        ) as text_file:
-            transcription = openai.Audio.transcribe(
-                model="whisper-1",
-                file=audio_file,
+        with open(file, "rb") as audio_file, open(destination, "a") as text_file:
+            transcript = openai.Audio.transcribe(
+                "whisper-1",
+                audio_file,
             )
-            text_file.write(transcription["text"])
+            text_file.write(transcript["text"])
 
 
 @st.cache_data()
 def extract_audio_from_video(video_path):
-    audio_path = (
-        video_path.replace("mp4", "mp3")
-        .replace("avi", "mp3")
-        .replace("mkv", "mp3")
-        .replace("mov", "mp3")
-    )
+    if has_transcript:
+        return
+    audio_path = video_path.replace("mp4", "mp3")
     command = [
-        ffmpeg,
+        "ffmpeg",
         "-y",
         "-i",
         video_path,
         "-vn",
         audio_path,
     ]
-    subprocess.run(command, check=True)
+    subprocess.run(command)
 
 
 @st.cache_data()
 def cut_audio_in_chunks(audio_path, chunk_size, chunks_folder):
+    if has_transcript:
+        return
     track = AudioSegment.from_mp3(audio_path)
-    chunk_length = chunk_size * 60 * 1000
-    chunks = math.ceil(len(track) / chunk_length)
-    if not os.path.exists(chunks_folder):
-        os.makedirs(chunks_folder)
+    chunk_len = chunk_size * 60 * 1000
+    chunks = math.ceil(len(track) / chunk_len)
     for i in range(chunks):
-        start_time = i * chunk_length
-        end_time = (i + 1) * chunk_length
+        start_time = i * chunk_len
+        end_time = (i + 1) * chunk_len
         chunk = track[start_time:end_time]
-        chunk.export(f"{chunks_folder}/{i + 1:02d}.mp3", format="mp3")
+        chunk.export(
+            f"./{chunks_folder}/chunk_{i}.mp3",
+            format="mp3",
+        )
 
+
+st.set_page_config(
+    page_title="MeetingGPT",
+    page_icon="💼",
+)
+st.markdown(
+    """
+# MeetingGPT
+Welcome to MeetingGPT, upload a video and I will give you a transcript, a summary and a chat bot to ask any questions about it.
+Get started by uploading a video file in the sidebar.
+"""
+)
 
 with st.sidebar:
     video = st.file_uploader(
-        "Upload Video",
+        "Video",
         type=["mp4", "avi", "mkv", "mov"],
     )
+
 if video:
-    cache_dir = "./.cache"
-    if not os.path.exists(cache_dir):
-        os.makedirs(cache_dir)
+    chunks_folder = "./.cache/chunks"
+    with st.status("Loading video...") as status:
+        video_content = video.read()
+        video_path = f"./.cache/{video.name}"
+        audio_path = video_path.replace("mp4", "mp3")
+        transcript_path = video_path.replace("mp4", "txt")
+        with open(video_path, "wb") as f:
+            f.write(video_content)
+        status.update(label="Extracting audio...")
+        extract_audio_from_video(video_path)
+        status.update(label="Cutting audio segments...")
+        cut_audio_in_chunks(audio_path, 10, chunks_folder)
+        status.update(label="Transcribing audio...")
+        transcribe_chunks(chunks_folder, transcript_path)
 
-    video_path = os.path.join(cache_dir, video.name)
-    chunks_folder = os.path.join(cache_dir, f"chunks_{os.path.splitext(video.name)[0]}")
-    transcription_path = os.path.join(
-        cache_dir, f"{os.path.splitext(video.name)[0]}.txt"
-    )
-
-    if not os.path.exists(transcription_path):
-        with st.status("Loading video...") as status:
-            video_content = video.read()
-            with open(video_path, "wb") as f:
-                f.write(video_content)
-                status.update(label="Extracting audio...")
-                audio_path = extract_audio_from_video(video_path)
-                if audio_path:
-                    status.update(label="Cutting audio segments...")
-                    cut_audio_in_chunks(audio_path, 10, chunks_folder)
-                    status.update(label="Transcribing audio...")
-                    transcribe_chunks(chunks_folder, transcription_path)
-
-    transcription_tab, summary_tab, qa_tab = st.tabs(
+    transcript_tab, summary_tab, qa_tab = st.tabs(
         [
-            "Transcription",
+            "Transcript",
             "Summary",
             "Q&A",
         ]
     )
 
-    with transcription_tab:
-        if os.path.exists(transcription_path):
-            with open(transcription_path, "r", encoding="utf-8") as file:
-                st.write(file.read())
-        else:
-            st.write("Transcription file not found.")
+    with transcript_tab:
+        with open(transcript_path, "r") as file:
+            st.write(file.read())
 
     with summary_tab:
         start = st.button("Generate summary")
-
         if start:
-            loader = TextLoader(transcription_path)
-            splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-                chunk_size=800,
-                chunk_overlap=100,
-            )
+            loader = TextLoader(transcript_path)
             docs = loader.load_and_split(text_splitter=splitter)
 
             first_summary_prompt = ChatPromptTemplate.from_template(
@@ -157,9 +145,8 @@ if video:
                 Write a concise summary of the following:
                 "{text}"
                 CONCISE SUMMARY:
-            """
+                """
             )
-
             first_summary_chain = first_summary_prompt | llm | StrOutputParser()
             summary = first_summary_chain.invoke(
                 {"text": docs[0].page_content},
@@ -179,7 +166,7 @@ if video:
             refine_chain = refine_prompt | llm | StrOutputParser()
             with st.status("Summarizing...") as status:
                 for i, doc in enumerate(docs[1:]):
-                    status.update(label=f"Processing document {i+1}/{len(docs)-1} ")
+                    status.update(label=f"Processing document {i+1}/{len(docs)-1}")
                     summary = refine_chain.invoke(
                         {
                             "existing_summary": summary,
@@ -188,3 +175,8 @@ if video:
                     )
                     st.write(summary)
             st.write(summary)
+
+    with qa_tab:
+        retriever = embed_file(transcript_path)
+        docs = retriever.invoke("do they talk about marcus aurelius?")
+        st.write(docs)
