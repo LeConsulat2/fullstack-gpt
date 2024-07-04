@@ -1,9 +1,11 @@
 import os
 import streamlit as st
+import subprocess
 import math
 import glob
 import openai
 import ffmpeg
+from Dark import set_page_config
 from pydub import AudioSegment
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
@@ -70,16 +72,16 @@ def extract_audio_from_video(video_path):
         .replace("mkv", "mp3")
         .replace("mov", "mp3")
     )
-    try:
-        (
-            ffmpeg.input(video_path)
-            .output(audio_path, format="mp3", acodec="libmp3lame", vn=True)
-            .run()
-        )
-        return audio_path
-    except ffmpeg.Error as e:
-        st.error(f"FFmpeg Error: {e.stderr.decode('utf8')}")
-    return None
+    ffmpeg_path = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"
+    command = [
+        ffmpeg_path,
+        "-y",
+        "-i",
+        video_path,
+        "-vn",
+        audio_path,
+    ]
+    subprocess.run(command, check=True)
 
 
 @st.cache_data()
