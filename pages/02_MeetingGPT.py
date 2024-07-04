@@ -72,9 +72,8 @@ def extract_audio_from_video(video_path):
         .replace("mkv", "mp3")
         .replace("mov", "mp3")
     )
-    ffmpeg_path = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe"
     command = [
-        ffmpeg_path,
+        ffmpeg,
         "-y",
         "-i",
         video_path,
