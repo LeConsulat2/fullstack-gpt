@@ -55,12 +55,12 @@ llm = ChatOpenAI(
     openai_api_key=openai_api_key,  # Pass the API key here directly
 )
 
-has_transcript = os.path.exists("./.cache/podcast.txt")
+has_transcription = os.path.exists("./.cache/podcast.txt")
 
 
 @st.cache_data()
 def transcribe_chunks(chunk_folder, destination):
-    if has_transcript:
+    if has_transcription:
         return
     files = glob.glob(f"{chunk_folder}/*.mp3")
     files.sort()
@@ -75,7 +75,7 @@ def transcribe_chunks(chunk_folder, destination):
 
 @st.cache_data()
 def extract_audio_from_video(video_path):
-    if has_transcript:
+    if has_transcription:
         return
     audio_path = video_path.replace("mp4", "mp3")
     command = [
@@ -91,7 +91,7 @@ def extract_audio_from_video(video_path):
 
 @st.cache_data()
 def cut_audio_in_chunks(audio_path, chunk_size, chunks_folder):
-    if has_transcript:
+    if has_transcription:
         return
     track = AudioSegment.from_mp3(audio_path)
     chunk_len = chunk_size * 60 * 1000
