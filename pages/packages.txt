@@ -1,1 +1,9 @@
+# System packages
 ffmpeg
+
+# Python packages
+[python]
+openai
+streamlit
+pydub
+langchain

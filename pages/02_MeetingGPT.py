@@ -1,4 +1,5 @@
 import os
+import sys
 import streamlit as st
 import subprocess
 import math
@@ -13,6 +14,9 @@ from langchain.schema import StrOutputParser
 from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication
+
+# Ensure all required packages are installed
+subprocess.run([sys.executable, "ensure_packages.py"], check=True)
 
 st.set_page_config(
     page_title="MeetingGPT",
