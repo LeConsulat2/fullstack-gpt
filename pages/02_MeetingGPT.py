@@ -1,25 +1,21 @@
-from langchain.storage import LocalFileStore
 import streamlit as st
 import subprocess
 import math
-from pydub import AudioSegment
 import glob
 import openai
 import os
+from pydub import AudioSegment
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
-from langchain.vectorstores.faiss import FAISS
-from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
-from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication  # Import the utility function
 
 st.set_page_config(
     page_title="MeetingGPT",
-    page_icon="💼",
+    page_icon="📃",
 )
 
 # Ensure the user is authenticated
@@ -39,51 +35,27 @@ alpha_vantage_api_key = (
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
 
-# Log the API key for debugging (remove this after debugging)
-# st.write(f"OpenAI API Key: {openai_api_key}")
-# st.write(f"Alpha Vantage API Key: {alpha_vantage_api_key}")
-# st.write(f"Username: {username}")
-# st.write(f"Password: {password}")
+st.title("MeetingGPT")
 
-if not openai_api_key or not alpha_vantage_api_key or not username or not password:
-    st.error("Some required environment variables are missing.")
-    st.stop()
+st.markdown(
+    """
+    ## Welcome to MeetingGPT
 
-try:
-    llm = ChatOpenAI(
-        model="gpt-3.5-turbo",
-        temperature=0.1,
-        streaming=True,
-        openai_api_key=openai_api_key,  # Pass the API key here
-    )
-    # st.write("ChatOpenAI initialized successfully.")
-except Exception as e:
-    st.error(f"Failed to initialize ChatOpenAI: {e}")
-    st.stop()
+    Experience seamless transcription and summary of your meetings with MeetingGPT. 
+    
+    Upload your video, and we'll provide a detailed transcript, a concise summary, and a chatbot to assist with any queries you might have.
 
-
-has_transcript = os.path.exists("./.cache/podcast.txt")
-
-splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-    chunk_size=800,
-    chunk_overlap=100,
+    Get started by uploading a video file via the sidebar.
+    """
 )
 
+llm = ChatOpenAI(
+    temperature=0.1,
+    model="gpt-3.5-turbo-0125",
+    openai_api_key=openai_api_key,  # Pass the API key here directly
+)
 
-@st.cache_data()
-def embed_file(file_path):
-    cache_dir = LocalFileStore(f"./.cache/embeddings/{file.name}")
-    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-        chunk_size=800,
-        chunk_overlap=100,
-    )
-    loader = TextLoader(file_path)
-    docs = loader.load_and_split(text_splitter=splitter)
-    embeddings = OpenAIEmbeddings()
-    cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
-    vectorstore = FAISS.from_documents(docs, cached_embeddings)
-    retriever = vectorstore.as_retriever()
-    return retriever
+has_transcript = os.path.exists("./.cache/podcast.txt")
 
 
 @st.cache_data()
@@ -134,65 +106,74 @@ def cut_audio_in_chunks(audio_path, chunk_size, chunks_folder):
         )
 
 
-st.markdown(
-    """
-# MeetingGPT
-Welcome to MeetingGPT, upload a video and I will give you a transcript, a summary and a chat bot to ask any questions about it.
-Get started by uploading a video file in the sidebar.
-"""
-)
-
 with st.sidebar:
     video = st.file_uploader(
-        "Video",
+        "Upload Video",
         type=["mp4", "avi", "mkv", "mov"],
     )
-
 if video:
-    chunks_folder = "./.cache/chunks"
-    with st.status("Loading video...") as status:
-        video_content = video.read()
-        video_path = f"./.cache/{video.name}"
-        audio_path = video_path.replace("mp4", "mp3")
-        transcript_path = video_path.replace("mp4", "txt")
-        with open(video_path, "wb") as f:
-            f.write(video_content)
-        status.update(label="Extracting audio...")
-        extract_audio_from_video(video_path)
-        status.update(label="Cutting audio segments...")
-        cut_audio_in_chunks(audio_path, 10, chunks_folder)
-        status.update(label="Transcribing audio...")
-        transcribe_chunks(chunks_folder, transcript_path)
+    chunks_folder = f"./.cache/chunks_{os.path.splitext(video.name)[0]}"
+    transcription_path = f"./.cache/{os.path.splitext(video.name)[0]}.txt"
+    if not os.path.exists(transcription_path):
+        with st.status("Loading video...") as status:
+            video_content = video.read()
+            # Save the uploaded video to a temporary location
+            video_path = f"./.cache/{video.name}"
+            audio_path = (
+                video_path.replace(".mp4", ".mp3")
+                .replace(".avi", ".mp3")
+                .replace(".mkv", ".mp3")
+                .replace(".mov", ".mp3")
+            )
+            with open(video_path, "wb") as f:
+                f.write(video_content)
+            status.update(label="Extracting audio...")
+            extract_audio_from_video(video_path)
+            status.update(label="Cutting audio segments...")
+            cut_audio_in_chunks(audio_path, 10, chunks_folder)
+            status.update(label="Transcribing audio...")
+            transcribe_chunks(chunks_folder, transcription_path)
 
-    transcript_tab, summary_tab, qa_tab = st.tabs(
+    transcription_tab, summary_tab, qa_tab = st.tabs(
         [
-            "Transcript",
+            "Transcription",
             "Summary",
             "Q&A",
         ]
     )
 
-    with transcript_tab:
-        with open(transcript_path, "r") as file:
-            st.write(file.read())
+    with transcription_tab:
+        if os.path.exists(transcription_path):
+            with open(transcription_path, "r", encoding="utf-8") as file:
+                st.write(file.read())
+        else:
+            st.write("Transcription file not found.")
 
     with summary_tab:
         start = st.button("Generate summary")
+
         if start:
-            loader = TextLoader(transcript_path)
+            loader = TextLoader(transcription_path)
+            splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+                chunk_size=800,
+                chunk_overlap=100,
+            )
             docs = loader.load_and_split(text_splitter=splitter)
 
             first_summary_prompt = ChatPromptTemplate.from_template(
                 """
                 Write a concise summary of the following:
                 "{text}"
-                CONCISE SUMMARY:
-                """
+                CONCISE SUMMARY:                
+            """
             )
+
             first_summary_chain = first_summary_prompt | llm | StrOutputParser()
+
             summary = first_summary_chain.invoke(
                 {"text": docs[0].page_content},
             )
+
             refine_prompt = ChatPromptTemplate.from_template(
                 """
                 Your job is to produce a final summary.
@@ -205,10 +186,12 @@ if video:
                 If the context isn't useful, RETURN the original summary.
                 """
             )
+
             refine_chain = refine_prompt | llm | StrOutputParser()
+
             with st.status("Summarizing...") as status:
                 for i, doc in enumerate(docs[1:]):
-                    status.update(label=f"Processing document {i+1}/{len(docs)-1}")
+                    status.update(label=f"Processing document {i+1}/{len(docs)-1} ")
                     summary = refine_chain.invoke(
                         {
                             "existing_summary": summary,
@@ -217,8 +200,3 @@ if video:
                     )
                     st.write(summary)
             st.write(summary)
-
-    with qa_tab:
-        retriever = embed_file(transcript_path)
-        docs = retriever.invoke("do they talk about marcus aurelius?")
-        st.write(docs)
