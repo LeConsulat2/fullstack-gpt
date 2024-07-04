@@ -36,6 +36,9 @@ alpha_vantage_api_key = (
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
 
+# Set the OpenAI API key globally for the openai module
+openai.api_key = openai_api_key
+
 st.title("MeetingGPT")
 
 st.markdown(
