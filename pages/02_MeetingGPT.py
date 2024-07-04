@@ -4,14 +4,13 @@ import subprocess
 import math
 import glob
 import openai
-import ffmpeg
-from Dark import set_page_config
 from pydub import AudioSegment
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
+from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication
 
@@ -74,10 +73,15 @@ def extract_audio_from_video(video_path):
         .replace("mov", "mp3")
     )
     try:
-        ffmpeg.input(video_path).output(audio_path, vn=None).run()
+        result = subprocess.run(
+            ["ffmpeg", "-i", video_path, audio_path],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         return audio_path
-    except ffmpeg.Error as e:
-        st.error(f"FFmpeg Error: {e.stderr}")
+    except subprocess.CalledProcessError as e:
+        st.error(f"FFmpeg Error: {e.stderr.decode('utf-8')}")
     return None
 
 
