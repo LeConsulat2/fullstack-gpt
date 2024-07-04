@@ -117,6 +117,8 @@ if video:
     if not os.path.exists(transcription_path):
         with st.spinner("Processing..."):
             video_content = video.read()
+            # Ensure the cache directory exists
+            os.makedirs("./.cache", exist_ok=True)
             # Save the uploaded video to a temporary location
             video_path = f"./.cache/{video.name}"
             audio_path = (
@@ -130,6 +132,7 @@ if video:
             st.info("Extracting audio...")
             extract_audio_from_video(video_path)
             st.info("Cutting audio segments...")
+            os.makedirs(chunks_folder, exist_ok=True)
             cut_audio_in_chunks(audio_path, 10, chunks_folder)
             st.info("Transcribing audio...")
             transcribe_chunks(chunks_folder, transcription_path)
