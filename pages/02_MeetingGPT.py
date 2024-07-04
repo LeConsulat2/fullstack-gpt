@@ -11,7 +11,6 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
-from Dark import set_page_config
 from dotenv import load_dotenv
 from Utils import check_authentication
 
@@ -22,7 +21,6 @@ st.set_page_config(
 
 check_authentication()
 load_dotenv()
-
 openai_api_key = (
     os.getenv("OPENAI_API_KEY") or st.secrets["credentials"]["OPENAI_API_KEY"]
 )
@@ -33,19 +31,12 @@ alpha_vantage_api_key = (
 username = os.getenv("username") or st.secrets["credentials"]["username"]
 password = os.getenv("password") or st.secrets["credentials"]["password"]
 
-if "environment" in st.secrets:
-    os.environ["PATH"] = st.secrets["environment"]["PATH"]
-
 st.title("MeetingGPT")
-
 st.markdown(
     """
     ## Welcome to MeetingGPT
-
     Experience seamless transcription and summary of your meetings with MeetingGPT.
-
     Upload your video, and we'll provide a detailed transcript, a concise summary, and a chatbot to assist with any queries you might have.
-
     Get started by uploading a video file via the sidebar.
     """
 )
@@ -80,35 +71,12 @@ def extract_audio_from_video(video_path):
         .replace("mkv", "mp3")
         .replace("mov", "mp3")
     )
-    command = [
-        "ffmpeg",
-        "-y",
-        "-i",
-        video_path,
-        "-vn",
-        audio_path,
-    ]
-    subprocess.run(command)
     try:
         ffmpeg.input(video_path).output(audio_path, vn=None).run()
         return audio_path
     except ffmpeg.Error as e:
         st.error(f"FFmpeg Error: {e.stderr}")
     return None
-
-
-# @st.cache_data()
-# def extract_audio_from_video(video_path):
-#     audio_path = video_path.replace("mp4", "mp3")
-#     command = [
-#         "ffmpeg",
-#         "-y",
-#         "-i",
-#         video_path,
-#         "-vn",
-#         audio_path,
-#     ]
-#     subprocess.run(command)
 
 
 @st.cache_data()
@@ -144,8 +112,6 @@ if video:
     if not os.path.exists(transcription_path):
         with st.status("Loading video...") as status:
             video_content = video.read()
-            # Ensure the directories exist
-            os.makedirs("./.cache/meeting_files/", exist_ok=True)
             with open(video_path, "wb") as f:
                 f.write(video_content)
                 status.update(label="Extracting audio...")
@@ -191,11 +157,9 @@ if video:
             )
 
             first_summary_chain = first_summary_prompt | llm | StrOutputParser()
-
             summary = first_summary_chain.invoke(
                 {"text": docs[0].page_content},
             )
-
             refine_prompt = ChatPromptTemplate.from_template(
                 """
                 Your job is to produce a final summary.
@@ -208,9 +172,7 @@ if video:
                 If the context isn't useful, RETURN the original summary.
                 """
             )
-
             refine_chain = refine_prompt | llm | StrOutputParser()
-
             with st.status("Summarizing...") as status:
                 for i, doc in enumerate(docs[1:]):
                     status.update(label=f"Processing document {i+1}/{len(docs)-1} ")
