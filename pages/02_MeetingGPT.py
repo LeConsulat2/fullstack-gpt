@@ -206,7 +206,3 @@ if video:
                         )
                         st.write(summary)
                 st.write(summary)
-            else:
-                st.write(
-                    "No documents found for summarization. Please check the transcription file."
-                )
