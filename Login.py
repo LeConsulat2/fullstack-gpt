@@ -1,5 +1,5 @@
 import streamlit as st
-from Dark import set_page_config
+
 
 # Reading credentials from secrets.toml
 credentials = st.secrets["credentials"]
