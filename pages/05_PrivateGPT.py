@@ -16,8 +16,6 @@ st.set_page_config(
     page_icon="📃",
 )
 
-# Display under construction message
-st.markdown("## This page is under construction 🔨")
 
 # Ensure the user is authenticated
 check_authentication()
