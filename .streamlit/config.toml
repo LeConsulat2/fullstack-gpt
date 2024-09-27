@@ -1,5 +1,5 @@
 [server]
-maxUploadSize = 2500
+maxUploadSize = 3000
 
 [theme]
 base="dark"
